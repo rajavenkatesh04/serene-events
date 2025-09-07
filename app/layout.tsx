@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Cal_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/app/ui/theme-provider";
-import { Analytics } from "@vercel/analytics/next";
-import Script from "next/script";
+import { Analytics } from "@/app/lib/analytics";
+import CookieConsentBanner from "@/app/ui/cookie-banner";
+
 
 const calSans = Cal_Sans({
     weight: ['400'],
@@ -26,7 +27,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
         <body className={`${calSans.className} antialiased bg-white text-gray-900 dark:bg-zinc-950 dark:text-zinc-100`}>
         <ThemeProvider
             attribute="class"
@@ -35,19 +36,12 @@ export default function RootLayout({
             disableTransitionOnChange
         >
             {children}
+            <CookieConsentBanner />
             <Analytics />
         </ThemeProvider>
 
-        {/* Microsoft Clarity Script */}
-        <Script id="ms-clarity" strategy="afterInteractive">
-            {`
-                (function(c,l,a,r,i,t,y){
-                    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-                })(window, document, "clarity", "script", "sliaoaoq2a");
-            `}
-        </Script>
+
+
         </body>
         </html>
     );
