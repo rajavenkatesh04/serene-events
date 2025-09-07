@@ -10,6 +10,7 @@ const links = [
     { name: 'Overview', href: '/dashboard', icon: HomeIcon },
     { name: 'Events', href: '/dashboard/events', icon: CalendarDaysIcon },
     { name: 'Invitations', href: '/dashboard/invitations', icon: EnvelopeIcon },
+    { name: 'My Events', href: '/dashboard/myevents', icon: EnvelopeIcon },
     { name: 'Master', href: '/dashboard/master', icon: BoltIcon },
 ];
 
