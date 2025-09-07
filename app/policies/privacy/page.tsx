@@ -9,8 +9,9 @@ export default function PrivacyPolicyPage() {
                         Privacy Policy for Luna
                     </h1>
 
+                    {/* // UPDATED DATE */}
                     <p className="mb-4 text-sm text-gray-500 dark:text-zinc-400">
-                        Last Updated: September 6, 2025
+                        Last Updated: September 7, 2025
                     </p>
 
                     <div className="space-y-6 text-gray-700 dark:text-zinc-300">
@@ -34,6 +35,10 @@ export default function PrivacyPolicyPage() {
                                 <li>
                                     <strong>Subscriber Information:</strong> For public event attendees who choose to receive notifications, we collect a Firebase Cloud Messaging (FCM) token. This token is anonymous and is not linked to any personal user account.
                                 </li>
+                                {/* // UPDATED SECTION */}
+                                <li>
+                                    <strong>Usage and Analytics Data:</strong> When you provide consent, we and our third-party analytics partners may collect information about your device and how you interact with our application. This is explained further in the &quot;Cookies and Tracking Technologies&quot; section below.
+                                </li>
                             </ul>
                         </section>
 
@@ -48,12 +53,37 @@ export default function PrivacyPolicyPage() {
                             </ul>
                         </section>
 
+                        {/* // NEW SECTION */}
                         <section>
-                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">4. Disclosure of Your Information</h2>
-                            <p>We do not sell your personal information. We may share information we have collected about you in certain situations, including:</p>
+                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">4. Cookies and Tracking Technologies</h2>
+                            <p className="mb-2">We use cookies to help customize the Service and improve your experience. A cookie is a small file placed on your device. When you first visit our site, you will be presented with a cookie consent banner that allows you to control which cookies are used.</p>
+                            <h3 className="mt-4 mb-2 text-lg font-medium text-gray-800 dark:text-zinc-200">Types of Cookies We Use</h3>
                             <ul className="list-disc space-y-2 pl-6">
                                 <li>
-                                    <strong>With Third-Party Service Providers:</strong> We use Google and Firebase for authentication, database, storage, and notification services. Your information is subject to their respective privacy policies.
+                                    <strong>Strictly Necessary Cookies:</strong> These cookies are essential for the Service to function and cannot be switched off. They are used to manage your login session and remember your site preferences (such as your theme choice). You are not asked for consent for these cookies.
+                                </li>
+                                <li>
+                                    <strong>Analytics and Performance Cookies:</strong> These cookies allow us to collect anonymous information about how visitors use our Service. This helps us understand user behavior and improve the application. We use these cookies only with your explicit consent, which you can provide via the cookie banner. We use the following analytics services:
+                                    <ul className="list-circle space-y-1 pl-6 mt-2">
+                                        <li>Vercel Analytics</li>
+                                        <li>Microsoft Clarity</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            You can manage your cookie preferences at any time. If you decline analytics cookies, they will not be used. You can change your choice by clearing your browser&apos;s cookies for our site, which will cause the consent banner to reappear on your next visit.
+                        </section>
+
+                        <section>
+                            {/* // SECTION NUMBERING UPDATED */}
+                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">5. Disclosure of Your Information</h2>
+                            <p>We do not sell your personal information. We may share information we have collected about you with third-party service providers that perform services for us or on our behalf, including:</p>
+                            {/* // UPDATED SECTION */}
+                            <ul className="list-disc space-y-2 pl-6">
+                                <li>
+                                    <strong>Platform Services:</strong> We use Google and Firebase for authentication, database, storage, and notification services.
+                                </li>
+                                <li>
+                                    <strong>Analytics Services:</strong> We share anonymous usage data with Vercel and Microsoft for the purpose of analyzing site traffic and user behavior. Their use of your information is governed by their respective privacy policies.
                                 </li>
                                 <li>
                                     <strong>By Law or to Protect Rights:</strong> If we believe the release of information about you is necessary to respond to legal process or protect the rights, property, and safety of others, we may share your information.
@@ -62,14 +92,16 @@ export default function PrivacyPolicyPage() {
                         </section>
 
                         <section>
-                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">5. Data Security</h2>
+                            {/* // SECTION NUMBERING UPDATED */}
+                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">6. Data Security</h2>
                             <p>
                                 We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable.
                             </p>
                         </section>
 
                         <section>
-                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">6. Contact Us</h2>
+                            {/* // SECTION NUMBERING UPDATED */}
+                            <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">7. Contact Us</h2>
                             <p>
                                 If you have questions or comments about this Privacy Policy, please contact us at: <a href="mailto:grv.9604@gmail.com" className="text-blue-500 hover:underline">here</a>.
                             </p>

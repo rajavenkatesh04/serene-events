@@ -13,11 +13,14 @@ export default async function SideNav() {
     const inviteCount = pendingInvites.length;
 
     const user = {
-        name: session?.name || 'User',
+        // This line was already correct from our last change
+        name: userProfile?.displayName || session?.name || 'User',
         email: session?.email || '',
         imageUrl: session?.picture || '/placeholder-user.jpg',
         role: userProfile?.role || 'member',
-        organizationName: userProfile?.organizationName || 'Your Workspace',
+        // --- THIS IS THE FIX ---
+        // We now correctly access the .name property from the organization object.
+        organizationName: userProfile?.organization?.name || 'Your Workspace',
     };
 
     return (
@@ -53,3 +56,4 @@ export default async function SideNav() {
         </div>
     );
 }
+

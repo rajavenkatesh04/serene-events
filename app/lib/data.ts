@@ -1,7 +1,7 @@
 // app/lib/data.ts
 
 import { unstable_noStore as noStore } from 'next/cache';
-import {User, Event, Invitation, FirestoreTimestamp} from '@/app/lib/definitions';
+import {User, Event, Invitation, FirestoreTimestamp, Organisation} from '@/app/lib/definitions';
 // Switch to using the ADMIN Firestore instance for all server-side data fetching
 import { adminDb } from './firebase-server';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -81,6 +81,7 @@ export async function fetchLatestEvents(userId: string) {
     }
 }
 
+
 // Fetches the complete user profile
 export async function fetchUserProfile(userId: string) {
     noStore();
@@ -91,13 +92,22 @@ export async function fetchUserProfile(userId: string) {
         const userData = userDoc.data() as User;
         const orgDoc = await adminDb.collection('organizations').doc(userData.organizationId).get();
 
-        if (!orgDoc.exists) {
-            return { ...userData, organizationName: 'Unknown Workspace' };
-        }
+        // --- UPDATED LOGIC ---
+        // This now returns the full organization object from Firestore, ensuring it
+        // matches the 'Organisation' interface perfectly.
+        const organizationData = orgDoc.exists
+            ? { id: orgDoc.id, ...orgDoc.data() } as Organisation
+            : {
+                id: userData.organizationId,
+                name: 'Unknown Workspace',
+                ownerUid: '',
+                subscriptionTier: 'free',
+            } as Organisation;
+        // --- END UPDATED LOGIC ---
 
         return {
             ...userData,
-            organizationName: orgDoc.data()!.name,
+            organization: organizationData, // Return the full, correctly-typed object
         };
     } catch (error) {
         console.error('Database Error fetching user profile:', error);

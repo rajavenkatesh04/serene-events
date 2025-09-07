@@ -830,3 +830,118 @@ export async function deleteUsers(prevState: { message?: string }, formData: For
     revalidatePath('/dashboard/master');
     return { message };
 }
+
+
+// =================================================================================
+// --- USER & PROFILE ACTIONS ---
+// =================================================================================
+
+
+
+export type UpdateProfileState = {
+    errors?: {
+        displayName?: string[];
+    };
+    message?: string | null;
+    status: 'idle' | 'success' | 'error';
+};
+
+const UpdateProfileSchema = z.object({
+    displayName: z.string().min(2, { message: "Name must be at least 2 characters." }),
+});
+
+export async function updateUserProfile(
+    prevState: UpdateProfileState,
+    formData: FormData
+): Promise<UpdateProfileState> {
+    const session = await adminAuth.getSession();
+    if (!session?.uid) {
+        return { message: "Authentication error.", status: 'error', errors: {} };
+    }
+
+    const validatedFields = UpdateProfileSchema.safeParse({
+        displayName: formData.get('displayName'),
+    });
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Invalid display name.',
+            status: 'error',
+        };
+    }
+    const { displayName } = validatedFields.data;
+
+    try {
+        // Create a batch to update both Auth and Firestore at the same time
+        const userDocRef = adminDb.collection('users').doc(session.uid);
+        const batch = adminDb.batch();
+
+        // Update Firestore document
+        batch.update(userDocRef, { displayName: displayName });
+
+        // This promise updates Firebase Authentication
+        const updateUserPromise = masterAuth.updateUser(session.uid, { displayName: displayName });
+
+        // Run both updates
+        await Promise.all([batch.commit(), updateUserPromise]);
+
+    } catch (err) {
+        console.error("Profile Update Error:", err);
+        return { message: "Failed to update your profile. Please try again.", status: 'error', errors: {} };
+    }
+
+    // Revalidate paths to ensure data is fresh across the app
+    revalidatePath('/dashboard', 'layout');
+    return { message: "Profile updated successfully!", status: 'success', errors: {} };
+}
+
+
+export type DeleteAccountState = {
+    message?: string;
+    status: 'idle' | 'error';
+};
+
+export async function deleteSelfAccount(
+    prevState: DeleteAccountState,
+    formData: FormData
+): Promise<DeleteAccountState> {
+    const session = await adminAuth.getSession();
+    if (!session?.uid) {
+        return { message: "Authentication error.", status: 'error' };
+    }
+
+    try {
+        const userDocRef = adminDb.doc(`users/${session.uid}`);
+        const userDoc = await userDocRef.get();
+
+        if (!userDoc.exists) {
+            // If the user doc is gone, still try to delete the auth user
+            await masterAuth.deleteUser(session.uid);
+            console.log(`Auth user ${session.uid} deleted, but Firestore doc was missing.`);
+            // Continue to logout logic
+        } else {
+            const userData = userDoc.data();
+            // CRITICAL: Prevent owners from deleting their accounts
+            if (userData?.role === 'owner') {
+                return { message: "Account deletion failed. Owners must transfer ownership or delete the organization.", status: 'error' };
+            }
+            // If not an owner, proceed with deletion
+            await userDocRef.delete();
+            await masterAuth.deleteUser(session.uid);
+        }
+
+        // Clear the session cookie
+        const cookieStore = await cookies();
+        cookieStore.set('session', '', { maxAge: -1 });
+
+    } catch (err) {
+        console.error("Self-Delete Account Error:", err);
+        return { message: "Failed to delete your account. Please try again.", status: 'error' };
+    }
+
+    // Redirect to login page after successful deletion
+    redirect('/login');
+}
+
+

@@ -2,7 +2,9 @@
 
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { PowerIcon, BuildingOffice2Icon, UserCircleIcon } from '@heroicons/react/24/outline';
+// UPDATED: Import Link and a new icon
+import Link from 'next/link';
+import { PowerIcon, BuildingOffice2Icon, UserCircleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { logout } from '@/app/lib/actions';
 import UserAvatar from './user-avatar';
 
@@ -21,6 +23,8 @@ export default function UserProfile({ user }: UserProfileProps) {
         master: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
         owner: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
         admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+        // MODIFIED: Added a 'god' role style just in case it's needed, based on your actions file
+        god: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
         member: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300',
     };
 
@@ -57,6 +61,22 @@ export default function UserProfile({ user }: UserProfileProps) {
                                 </span>
                             </div>
                         </div>
+
+                        {/* --- NEW MENU ITEM START --- */}
+                        <Menu.Item>
+                            {({ active }) => (
+                                <Link
+                                    href="/dashboard/profile"
+                                    className={`${
+                                        active ? 'bg-gray-100 dark:bg-zinc-800' : ''
+                                    } group flex w-full items-center gap-2 rounded-md p-2 text-sm text-gray-900 dark:text-zinc-200`}
+                                >
+                                    <Cog6ToothIcon className="h-5 w-5" />
+                                    Profile Settings
+                                </Link>
+                            )}
+                        </Menu.Item>
+                        {/* --- NEW MENU ITEM END --- */}
 
                         <Menu.Item>
                             {({ active }) => (

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     try {
         initFirebaseAdminApp();
-        const expiresIn = 60 * 60 * 2 * 1000; // 2 hours
+        const expiresIn = 2 * 24 * 60 * 60 * 1000; // 2 days
         const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
 
         const options = { name: 'session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: true };
