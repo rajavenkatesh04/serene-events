@@ -13,13 +13,10 @@ export default async function SideNav() {
     const inviteCount = pendingInvites.length;
 
     const user = {
-        // This line was already correct from our last change
         name: userProfile?.displayName || session?.name || 'User',
         email: session?.email || '',
         imageUrl: session?.picture || '/placeholder-user.jpg',
         role: userProfile?.role || 'member',
-        // --- THIS IS THE FIX ---
-        // We now correctly access the .name property from the organization object.
         organizationName: userProfile?.organization?.name || 'Your Workspace',
     };
 

@@ -20,7 +20,7 @@ export default function NavLinks({ inviteCount, userRole }: { inviteCount: numbe
         <div className="flex flex-row items-center justify-end gap-2 md:flex-col md:justify-start md:space-y-2 md:gap-0">
             {links.map((link) => {
 
-                if (link.name === 'Masters' && userRole !== 'god') {
+                if (link.name === 'Master' && userRole !== 'god') {
                     return null;
                 }
 
