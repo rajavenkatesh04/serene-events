@@ -1,10 +1,10 @@
-// [id]/page.tsx
-
 'use client';
 
-import { useEffect, useState, useRef, use } from 'react';
+import { Suspense, useEffect, useState, useRef, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
+import clsx from 'clsx';
 import { db } from '@/app/lib/firebase';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { Announcement, Event, FirestoreTimestamp } from '@/app/lib/definitions';
@@ -31,13 +31,13 @@ import { AnnouncementsFeedSkeleton } from '@/app/ui/skeletons';
 import { formatRelativeDate } from '@/app/lib/utils';
 import { APIProvider, Map, AdvancedMarker, useMap, InfoWindow } from '@vis.gl/react-google-maps';
 import NotificationRefreshAlert from "@/app/ui/NotificationRefreshAlert";
-// 👇 1. IMPORT THE NEW STATUS SCREEN COMPONENTS
 import { ScheduledScreen, PausedScreen, EndedScreen, CancelledScreen } from '@/app/e/ui/StatusScreens';
+import EventChatPage from "@/app/e/[id]/chat/page";
+import EngagePage from "@/app/e/[id]/engage/page";
 
 
 // =================================================================================
-// REUSABLE UI COMPONENTS
-// (All reusable components like StatusBadge, SearchBar, NavbarForSRM, etc. remain unchanged)
+// REUSABLE UI COMPONENTS (Your existing components remain here, unchanged)
 // =================================================================================
 
 function StatusBadge({ status }: { status: Event['status'] }) {
@@ -136,7 +136,6 @@ function NavbarForSRM({ searchTerm, onSearchChange }: {
     );
 }
 
-// Enhanced ExpandableText component for better text handling
 function ExpandableText({ text, maxLines = 2 }: { text: string; maxLines?: number }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [canExpand, setCanExpand] = useState(false);
@@ -175,7 +174,6 @@ function ExpandableText({ text, maxLines = 2 }: { text: string; maxLines?: numbe
     );
 }
 
-// Enhanced AttachmentCard component with better styling and functionality
 function AttachmentCard({ attachment, isCompact = false }: {
     attachment: Announcement['attachment'];
     isCompact?: boolean
@@ -320,7 +318,6 @@ function AttachmentCard({ attachment, isCompact = false }: {
     );
 }
 
-// Enhanced PinnedCarousel with navigation controls
 function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -339,7 +336,7 @@ function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [announcements.length]);
+    }, [announcements.length, resetTimer]);
 
     const handleIndicatorClick = (index: number) => {
         setCurrentIndex(index);
@@ -464,7 +461,6 @@ function EventHeader({ event, eventId }: { event: Event; eventId: string }) {
     );
 }
 
-// Map component for announcements with location data
 function AnnouncementMap({ location }: { location: Announcement['location'] }) {
     const map = useMap();
     const [infoWindow, setInfoWindow] = useState<Announcement['location'] | null>(null);
@@ -519,7 +515,6 @@ function AnnouncementMap({ location }: { location: Announcement['location'] }) {
     );
 }
 
-// Enhanced CompactAnnouncementCard with expand functionality and visual enhancements
 function CompactAnnouncementCard({
                                      announcement,
                                      isRecent,
@@ -544,7 +539,6 @@ function CompactAnnouncementCard({
         }
     }, [isRecent]);
 
-    // Auto-expand most recent announcement
     useEffect(() => {
         if (shouldAutoExpand && !isExpanded) {
             onToggleExpanded();
@@ -656,7 +650,7 @@ function CompactAnnouncementCard({
                         </div>
                     )}
                     <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${announcement.location.center.lat},${announcement.location.center.lng}`}
+                        href={`https://maps.google.com/?q=${announcement.location.center.lat},${announcement.location.center.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-2 inline-block text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
@@ -676,7 +670,6 @@ function CompactAnnouncementCard({
     );
 }
 
-
 async function getInitialEventData(eventCode: string) {
     try {
         const baseUrl = typeof window !== 'undefined' ? '' : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
@@ -689,58 +682,28 @@ async function getInitialEventData(eventCode: string) {
     }
 }
 
-
-// In [id]/page.tsx, right above the `export default function PublicEventPage...` line
-
-/**
- * A robust function to normalize a Firestore timestamp from any format
- * (Admin SDK object, ISO string, or client SDK object) into the
- * format our client components expect: { seconds: number, nanoseconds: number }.
- */
-/**
- * A robust function to normalize a Firestore timestamp from any format
- * (Admin SDK object, ISO string, or client SDK object) into the
- * format our client components expect: { seconds: number, nanoseconds: number }.
- */
-/**
- * A robust, fully type-safe function to normalize a Firestore timestamp from any format
- * into the format our client components expect: { seconds: number, nanoseconds: number }.
- */
 function normalizeTimestamp(timestamp: unknown): { seconds: number; nanoseconds: number } {
-    // Case 1: It's already in the correct client-side format.
-    if (
-        timestamp instanceof Object && 'seconds' in timestamp && typeof timestamp.seconds === 'number'
-    ) {
+    if (timestamp instanceof Object && 'seconds' in timestamp && typeof timestamp.seconds === 'number') {
         return timestamp as { seconds: number; nanoseconds: number };
     }
-
-    // Case 2: It's a server-side Admin SDK timestamp ({ _seconds, _nanoseconds }).
-    if (
-        timestamp instanceof Object && '_seconds' in timestamp && typeof timestamp._seconds === 'number'
-    ) {
-        // TypeScript now knows the shape of the object, so we can access its properties.
+    if (timestamp instanceof Object && '_seconds' in timestamp && typeof timestamp._seconds === 'number') {
         const serverTimestamp = timestamp as { _seconds: number; _nanoseconds?: number };
         return { seconds: serverTimestamp._seconds, nanoseconds: serverTimestamp._nanoseconds || 0 };
     }
-
-    // Case 3: It's a string (e.g., from JSON serialization).
     if (typeof timestamp === 'string') {
         const date = new Date(timestamp);
-        // getTime() returns milliseconds, so we convert to seconds.
         return { seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 };
     }
-
-    // Fallback for unexpected formats.
     return { seconds: 0, nanoseconds: 0 };
 }
 
 
 // =================================================================================
-// MAIN PAGE COMPONENT
+// MAIN CLIENT COMPONENT WITH TAB LOGIC
 // =================================================================================
-export default function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
-    const resolvedParams = use(params);
-    const eventId = resolvedParams.id;
+function EventPageClientUI({ eventId }: { eventId: string }) {
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'announcements';
 
     const [event, setEvent] = useState<Event | null>(null);
     const [allAnnouncements, setAllAnnouncements] = useState<Announcement[]>([]);
@@ -754,7 +717,6 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
     const liveUpdatesRef = useRef<HTMLDivElement>(null);
     const initialScrollDone = useRef(false);
 
-
     useEffect(() => {
         if (!eventId) return;
 
@@ -762,32 +724,19 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
 
         getInitialEventData(eventId).then(data => {
             if (data && data.eventData && data.eventPath) {
-
-                // =================================================================
-                // 👇 USING THE NEW, ROBUST FIX
-                // =================================================================
                 const rawEvent = data.eventData;
-
                 const correctedEvent = {
                     ...rawEvent,
-                    // Use our universal parser for both timestamps
                     startsAt: normalizeTimestamp(rawEvent.startsAt),
                     endsAt: normalizeTimestamp(rawEvent.endsAt),
                 };
-
                 setEvent(correctedEvent);
-                // =================================================================
-                // END OF FIX
-                // =================================================================
-
                 setIsLoading(false);
 
                 const announcementsQuery = query(collection(db, `${data.eventPath}/announcements`), orderBy('createdAt', 'desc'));
-
                 unsubscribe = onSnapshot(announcementsQuery, (querySnapshot) => {
                     const announcementsData = querySnapshot.docs.map(doc => {
                         const data = doc.data();
-                        // Also normalize timestamps within announcements if they exist
                         return {
                             id: doc.id,
                             ...data,
@@ -839,7 +788,7 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
     const isAnnouncementRecent = (announcement: Announcement): boolean => {
         const currentTime = Date.now() / 1000;
         const announcementTime = announcement.createdAt.seconds;
-        const isWithinTimeWindow = (currentTime - announcementTime) < (5 * 60); // 5 minutes
+        const isWithinTimeWindow = (currentTime - announcementTime) < (5 * 60);
         const isAmongLatest = announcementTime === latestAnnouncementTime;
         return isWithinTimeWindow && isAmongLatest;
     };
@@ -861,6 +810,8 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
         setExpandedCards(new Set(allIds));
     };
 
+
+
     const handleCollapseAll = () => {
         setExpandedCards(new Set());
     };
@@ -881,69 +832,110 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
             <NavbarForSRM searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
             <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-                {/* Event header is shown for all statuses, but hidden on search */}
                 {!isSearchActive && event && <EventHeader event={event} eventId={eventId} />}
 
                 <main>
-                    {/* 👇 2. MODIFIED MAIN CONTENT AREA */}
-                    {isFeedLoading ? (
+                    {isFeedLoading && !event ? (
                         <AnnouncementsFeedSkeleton />
                     ) : (
                         (() => {
-                            if (!event) return null; // Should not happen if error handling is correct
+                            if (!event) return null;
 
-                            switch (event.status) {
-                                case 'scheduled':
-                                    return <ScheduledScreen event={event} />;
-                                case 'paused':
-                                    return <PausedScreen />;
-                                case 'ended':
-                                    return <EndedScreen announcements={allAnnouncements} />;
-                                case 'cancelled':
-                                    return <CancelledScreen />;
-                                case 'live':
-                                default:
-                                    // This is the original content for a live event
-                                    return (
-                                        <>
-                                            {!isSearchActive && <PinnedCarousel announcements={pinnedAnnouncements} />}
-                                            {!isSearchActive && <NotificationRefreshAlert eventId={eventId} />}
-                                            <div ref={liveUpdatesRef} className="scroll-mt-24">
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-                                                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                                                        {isSearchActive ? 'Search Results' : 'Live Updates'}
-                                                    </h3>
-                                                    {!isSearchActive && liveAnnouncements.length > 0 && (
-                                                        <div className="flex items-center gap-2">
-                                                            <button onClick={handleExpandAll} className="text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 rounded border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800 dark:hover:border-indigo-700">Expand All</button>
-                                                            <button onClick={handleCollapseAll} className="text-xs font-medium text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 px-2 py-1 rounded border border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600">Collapse All</button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {liveAnnouncements.length > 0 ? (
-                                                    <div className="space-y-4">
-                                                        {liveAnnouncements.map((ann, index) => (
-                                                            <CompactAnnouncementCard
-                                                                key={ann.id}
-                                                                announcement={ann}
-                                                                isRecent={isAnnouncementRecent(ann)}
-                                                                isExpanded={expandedCards.has(ann.id)}
-                                                                onToggleExpanded={() => handleToggleExpanded(ann.id)}
-                                                                shouldAutoExpand={index === 0 && isAnnouncementRecent(ann)}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <div className="rounded-lg border-2 border-dashed border-gray-300/80 bg-white/50 py-20 text-center dark:border-zinc-800/50 dark:bg-zinc-900/50">
-                                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">{searchTerm ? 'No Matching Updates' : 'No Live Updates Yet'}</h3>
-                                                        <p className="mt-1 text-gray-500 dark:text-zinc-400">{searchTerm ? 'Try a different search term.' : 'Stay tuned for real-time announcements!'}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    );
+                            if (event.status !== 'live') {
+                                switch (event.status) {
+                                    case 'scheduled': return <ScheduledScreen event={event} />;
+                                    case 'paused': return <PausedScreen />;
+                                    case 'ended': return <EndedScreen announcements={allAnnouncements} />;
+                                    case 'cancelled': return <CancelledScreen />;
+                                    default: return null;
+                                }
                             }
+
+                            return (
+                                <>
+                                    <div className="w-full border-b border-gray-200 dark:border-zinc-800">
+                                        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                                            <Link
+                                                href={`/e/${eventId}`}
+                                                className={clsx("whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium", {
+                                                    'border-indigo-500 text-indigo-600 dark:text-indigo-400': activeTab === 'announcements',
+                                                    'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300': activeTab !== 'announcements'
+                                                })}
+                                            >
+                                                Announcements
+                                            </Link>
+                                            <Link
+                                                href={`/e/${eventId}?tab=chat`}
+                                                className={clsx("whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium", {
+                                                    'border-indigo-500 text-indigo-600 dark:text-indigo-400': activeTab === 'chat',
+                                                    'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300': activeTab !== 'chat'
+                                                })}
+                                            >
+                                                Chat
+                                            </Link>
+                                            <Link
+                                                href={`/e/${eventId}?tab=engage`}
+                                                className={clsx("whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium", {
+                                                    'border-indigo-500 text-indigo-600 dark:text-indigo-400': activeTab === 'engage',
+                                                    'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300': activeTab !== 'engage'
+                                                })}
+                                            >
+                                                Engage
+                                            </Link>
+                                        </nav>
+                                    </div>
+
+                                    <div className="py-6">
+                                        {activeTab === 'announcements' && (
+                                            isFeedLoading ? <AnnouncementsFeedSkeleton /> : (
+                                                <>
+                                                    {!isSearchActive && <PinnedCarousel announcements={pinnedAnnouncements} />}
+                                                    {!isSearchActive && <NotificationRefreshAlert eventId={eventId} />}
+                                                    <div ref={liveUpdatesRef} className="scroll-mt-24">
+                                                        <div className="flex items-center justify-between mb-6">
+                                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                                                                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                                {isSearchActive ? 'Search Results' : 'Live Updates'}
+                                                            </h3>
+                                                            {!isSearchActive && liveAnnouncements.length > 0 && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <button onClick={handleExpandAll} className="text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 rounded border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800 dark:hover:border-indigo-700">Expand All</button>
+                                                                    <button onClick={handleCollapseAll} className="text-xs font-medium text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 px-2 py-1 rounded border border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600">Collapse All</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {liveAnnouncements.length > 0 ? (
+                                                            <div className="space-y-4">
+                                                                {liveAnnouncements.map((ann, index) => (
+                                                                    <CompactAnnouncementCard
+                                                                        key={ann.id}
+                                                                        announcement={ann}
+                                                                        isRecent={isAnnouncementRecent(ann)}
+                                                                        isExpanded={expandedCards.has(ann.id)}
+                                                                        onToggleExpanded={() => handleToggleExpanded(ann.id)}
+                                                                        shouldAutoExpand={index === 0 && isAnnouncementRecent(ann)}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="rounded-lg border-2 border-dashed border-gray-300/80 bg-white/50 py-20 text-center dark:border-zinc-800/50 dark:bg-zinc-900/50">
+                                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">{searchTerm ? 'No Matching Updates' : 'No Live Updates Yet'}</h3>
+                                                                <p className="mt-1 text-gray-500 dark:text-zinc-400">{searchTerm ? 'Try a different search term.' : 'Stay tuned for real-time announcements!'}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )
+                                        )}
+                                        {activeTab === 'chat' && (
+                                            <EventChatPage />
+                                        )}
+                                        {activeTab === 'engage' && (
+                                            <EngagePage />
+                                        )}
+                                    </div>
+                                </>
+                            );
                         })()
                     )}
                 </main>
@@ -972,5 +964,17 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
                 }
             `}</style>
         </div>
+    );
+}
+
+// =================================================================================
+// PAGE EXPORT WRAPPED IN SUSPENSE
+// =================================================================================
+export default function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = use(params);
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-zinc-950"><LoadingSpinner /><span className="ml-2">Loading Event...</span></div>}>
+            <EventPageClientUI eventId={resolvedParams.id} />
+        </Suspense>
     );
 }

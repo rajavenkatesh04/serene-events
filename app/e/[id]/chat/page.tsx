@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
-export default function Page() {
+export default function EventChatPage() {
     return (
         <main className="flex min-h-screen m-5 flex-col items-center justify-center">
             <div className="rounded-lg bg-white p-8 text-center shadow-sm dark:bg-zinc-900 md:p-12">
