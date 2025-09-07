@@ -1,6 +1,6 @@
 "use client"
 
-import ToggleSwitch from "@/app/ui/ToggleSwitch";
+import ToggleSwitch from "@/app/ui/themes/ToggleSwitch";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -14,7 +14,7 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 mx-auto max-w-7xl border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/80">
             <div className="flex items-center justify-between p-4 text-gray-900 dark:text-zinc-100">
-                <Link href="/">
+                <Link href="/public">
                     <h1 className="text-xl transition-transform duration-300 hover:scale-120 hover:bg-gradient-to-r hover:from-green-300 hover:to-emerald-600 hover:bg-clip-text hover:text-transparent">
                         Luna.
                     </h1>

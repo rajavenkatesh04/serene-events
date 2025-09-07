@@ -3,15 +3,15 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import clsx from 'clsx';
-import { HomeIcon, CalendarDaysIcon, EnvelopeIcon, BoltIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, CalendarDaysIcon, TicketIcon, KeyIcon, ClockIcon } from '@heroicons/react/24/outline';
 import InvitationBadge from './invitation-badge';
 
 const links = [
     { name: 'Overview', href: '/dashboard', icon: HomeIcon },
     { name: 'Events', href: '/dashboard/events', icon: CalendarDaysIcon },
-    { name: 'Invitations', href: '/dashboard/invitations', icon: EnvelopeIcon },
-    { name: 'My Events', href: '/dashboard/myevents', icon: EnvelopeIcon },
-    { name: 'Master', href: '/dashboard/master', icon: BoltIcon },
+    { name: 'Invitations', href: '/dashboard/invitations', icon: TicketIcon },
+    { name: 'Past Events', href: '/dashboard/myevents', icon: ClockIcon },
+    { name: 'Master', href: '/dashboard/master', icon: KeyIcon },
 ];
 
 export default function NavLinks({ inviteCount, userRole }: { inviteCount: number, userRole? : string }) {
