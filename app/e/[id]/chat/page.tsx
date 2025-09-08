@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/app/lib/firebase/auth';
 import { db } from '@/app/lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Message } from '@/app/lib/definitions';
 import { sendMessage } from '@/app/lib/actions/chatActions';
-import { joinEventPostLogin } from '@/app/lib/actions/socialActions';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 import Link from 'next/link';
+import Image from "next/image";
 
 function ChatMessage({ message }: { message: Message }) {
     const { user } = useAuth();
@@ -20,9 +20,11 @@ function ChatMessage({ message }: { message: Message }) {
 
     return (
         <div className={`flex items-start gap-3 ${isSender ? 'flex-row-reverse' : ''}`}>
-            <img
+            <Image
                 src={profilePic}
-                alt={message.senderUsername}
+                alt={message.senderUsername || 'User avatar'}
+                width={32}  // Required for next/image
+                height={32} // Required for next/image
                 className="h-8 w-8 rounded-full"
             />
             <div className={`max-w-xs break-words rounded-lg px-3 py-2 md:max-w-md ${isSender ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-zinc-800'}`}>
@@ -37,24 +39,11 @@ function ChatMessage({ message }: { message: Message }) {
 
 export default function EventChatPage() {
     const params = useParams();
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const eventId = params.id as string;
     const { user, loading } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // This effect handles the post-login action to save event participation
-    useEffect(() => {
-        const fromEvent = searchParams.get('fromEvent');
-        if (fromEvent === 'true' && eventId) {
-            joinEventPostLogin(eventId).then(() => {
-                // Clean the URL to prevent this from running again on refresh
-                router.replace(`/e/${eventId}?tab=chat`, { scroll: false });
-            });
-        }
-    }, [eventId, searchParams, router]);
 
     // This effect listens for real-time messages from Firestore
     useEffect(() => {
@@ -73,7 +62,7 @@ export default function EventChatPage() {
             setMessages(fetchedMessages);
         });
 
-        return () => unsubscribe();
+        return () => unsubscribe(); // Cleanup listener on component unmount
     }, [eventId]);
 
     // This effect automatically scrolls to the newest message
@@ -88,14 +77,18 @@ export default function EventChatPage() {
         const text = newMessage;
         setNewMessage(''); // Optimistically clear input for a snappy UI
 
-        await sendMessage({ eventId, text });
+        try {
+            await sendMessage({ eventId, text });
+        } catch (error) {
+            console.error(error);
+            // Optionally, handle the error in the UI, e.g., show a toast notification
+        }
     };
 
     if (loading) {
         return <div className="flex items-center justify-center py-10"><LoadingSpinner /></div>;
     }
 
-    // --- NEW: Define the redirect URL and encode it for safety ---
     const redirectUrl = encodeURIComponent(`/e/${eventId}?tab=chat`);
 
     return (
@@ -129,9 +122,9 @@ export default function EventChatPage() {
                     </form>
                 ) : (
                     <div className="text-center text-sm text-gray-500 dark:text-zinc-400">
+                        {/* The login link is now simpler, without the 'fromEvent' param */}
                         Please <Link
-                        // --- MODIFIED: Use the safely encoded URL ---
-                        href={`/login?redirect=${redirectUrl}&fromEvent=true&reason=chat`}
+                        href={`/login?redirect=${redirectUrl}&reason=chat`}
                         className="font-semibold text-indigo-600 hover:underline"
                     >
                         log in
