@@ -18,7 +18,6 @@ const GoogleIcon = () => (
     </svg>
 );
 
-// The component now accepts an optional redirectUrl prop
 export default function GoogleSignInButton({ redirectUrl }: { redirectUrl?: string }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +31,6 @@ export default function GoogleSignInButton({ redirectUrl }: { redirectUrl?: stri
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            // Step 1: Securely create the server-side session
             const idToken = await user.getIdToken();
             const response = await fetch('/api/auth/session', {
                 method: 'POST',
@@ -42,17 +40,19 @@ export default function GoogleSignInButton({ redirectUrl }: { redirectUrl?: stri
 
             if (!response.ok) throw new Error("Failed to create session.");
 
-            // Step 2: Check if the user is returning or new
             const userRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userRef);
 
             if (userDoc.exists()) {
-                // User already has a profile. Redirect them to the requested URL,
-                // or fall back to the dashboard.
                 router.push(redirectUrl || '/dashboard');
             } else {
-                // This is a brand new user. Send them to complete their profile.
-                router.push('/complete-profile');
+                // --- KEY CHANGE ---
+                // If the user is new, pass the original redirectUrl to the
+                // complete-profile page so it knows where to go next.
+                const destination = redirectUrl
+                    ? `/complete-profile?redirect=${encodeURIComponent(redirectUrl)}`
+                    : '/complete-profile';
+                router.push(destination);
             }
 
         } catch (error: unknown) {
@@ -85,3 +85,4 @@ export default function GoogleSignInButton({ redirectUrl }: { redirectUrl?: stri
         </div>
     );
 }
+

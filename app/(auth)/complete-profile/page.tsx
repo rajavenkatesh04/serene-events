@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/app/lib/firebase';
 import { completeUserProfile, type CompleteProfileState } from '@/app/lib/actions/authActions';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
@@ -30,6 +30,7 @@ export default function CompleteProfilePage() {
     const initialState: CompleteProfileState | null = null;
     const [state, formAction] = useActionState(completeUserProfile, initialState);
     const router = useRouter();
+    const searchParams = useSearchParams(); // Hook to read URL parameters
 
     // This effect handles the successful state returned from the server action
     useEffect(() => {
@@ -37,24 +38,25 @@ export default function CompleteProfilePage() {
             const updateUserSession = async () => {
                 const currentUser = auth.currentUser;
                 if (currentUser) {
-                    // 1. Force refresh to get the new ID token with custom claims
                     const idToken = await currentUser.getIdToken(true);
 
-                    // 2. Call your API route to create the new, updated session cookie
                     await fetch('/api/auth/session', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ idToken }),
                     });
 
-                    // 3. Now that the secure cookie is updated, redirect to the dashboard
-                    router.push('/dashboard');
+                    // Read the redirect URL that was passed from the sign-in button.
+                    const redirectUrl = searchParams.get('redirect');
+
+                    // Redirect to that URL, or fall back to the dashboard.
+                    router.push(redirectUrl || '/dashboard');
                 }
             };
 
             updateUserSession();
         }
-    }, [state, router]);
+    }, [state, router, searchParams]);
 
     return (
         <main className="flex min-h-screen items-center justify-center bg-white dark:bg-zinc-950">
