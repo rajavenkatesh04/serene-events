@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/app/lib/firebase/auth';
 import { db } from '@/app/lib/firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import { Message } from '@/app/lib/definitions';
 import { sendMessage } from '@/app/lib/actions/chatActions';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
+import { formatRelativeDate } from '@/app/lib/utils';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 import Link from 'next/link';
 import Image from "next/image";
 
+// --- REDESIGNED: Chat Message Component ---
 function ChatMessage({ message }: { message: Message }) {
     const { user } = useAuth();
     const isSender = user?.uid === message.senderUid;
@@ -23,16 +25,39 @@ function ChatMessage({ message }: { message: Message }) {
             <Image
                 src={profilePic}
                 alt={message.senderUsername || 'User avatar'}
-                width={32}  // Required for next/image
-                height={32} // Required for next/image
-                className="h-8 w-8 rounded-full"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full"
             />
-            <div className={`max-w-xs break-words rounded-lg px-3 py-2 md:max-w-md ${isSender ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-zinc-800'}`}>
-                {!isSender && (
-                    <p className="text-xs font-semibold text-indigo-500 dark:text-indigo-400">@{message.senderUsername}</p>
-                )}
-                <p className="text-sm">{message.text}</p>
+            <div className={`flex flex-col max-w-[80%] md:max-w-[70%] ${isSender ? 'items-end' : 'items-start'}`}>
+                <div className={`flex items-baseline gap-2 ${isSender ? 'flex-row-reverse' : ''}`}>
+                    <p className={`px-1 text-sm font-bold ${isSender ? 'text-pink-400' : 'text-rose-400'}`}>
+                        @{message.senderUsername}
+                    </p>
+                    <span className="text-xs text-gray-500 dark:text-zinc-500">
+                        {message.timestamp ? formatRelativeDate(message.timestamp) : 'sending...'}
+                    </span>
+                </div>
+                <div className={`mt-1 px-4 py-2 text-white ${isSender ? 'bg-gradient-to-br from-rose-500 to-pink-600 rounded-s-2xl rounded-ee-2xl' : 'bg-zinc-800 rounded-e-2xl rounded-es-2xl'}`}>
+                    <p className="leading-relaxed">{message.text}</p>
+                </div>
             </div>
+        </div>
+    );
+}
+
+// --- NEW: A more explicit login prompt ---
+function LoginPromptBar({ eventId }: { eventId: string }) {
+    const redirectUrl = encodeURIComponent(`/e/${eventId}?tab=chat`);
+    return (
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-sm">
+            <p className="text-sm font-medium text-zinc-300">You are viewing as a guest.</p>
+            <Link
+                href={`/login?redirect=${redirectUrl}&reason=chat`}
+                className="flex-shrink-0 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700"
+            >
+                Log In to Chat
+            </Link>
         </div>
     );
 }
@@ -45,27 +70,25 @@ export default function EventChatPage() {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // This effect listens for real-time messages from Firestore
     useEffect(() => {
         if (!eventId) return;
-
-        const messagesQuery = query(
-            collection(db, `chats/${eventId}/messages`),
-            orderBy('timestamp', 'asc')
-        );
+        const messagesQuery = query(collection(db, `chats/${eventId}/messages`), orderBy('timestamp', 'asc'));
 
         const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-            const fetchedMessages = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Message));
+            const fetchedMessages = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Ensure timestamp is correctly handled
+                    timestamp: data.timestamp ? { seconds: data.timestamp.seconds, nanoseconds: data.timestamp.nanoseconds } : null
+                } as Message;
+            });
             setMessages(fetchedMessages);
         });
-
-        return () => unsubscribe(); // Cleanup listener on component unmount
+        return () => unsubscribe();
     }, [eventId]);
 
-    // This effect automatically scrolls to the newest message
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -75,13 +98,11 @@ export default function EventChatPage() {
         if (newMessage.trim() === '' || !user || !eventId) return;
 
         const text = newMessage;
-        setNewMessage(''); // Optimistically clear input for a snappy UI
-
+        setNewMessage('');
         try {
             await sendMessage({ eventId, text });
         } catch (error) {
             console.error(error);
-            // Optionally, handle the error in the UI, e.g., show a toast notification
         }
     };
 
@@ -89,47 +110,43 @@ export default function EventChatPage() {
         return <div className="flex items-center justify-center py-10"><LoadingSpinner /></div>;
     }
 
-    const redirectUrl = encodeURIComponent(`/e/${eventId}?tab=chat`);
-
     return (
-        <div className="flex h-[60vh] flex-col rounded-lg border border-gray-200/80 bg-gray-50/50 p-4 dark:border-zinc-800/50 dark:bg-zinc-900/50">
-            {/* Message Display Area */}
-            <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-                {messages.map(msg => (
-                    <ChatMessage key={msg.id} message={msg} />
-                ))}
+        <div className="flex h-[70vh] flex-col bg-transparent">
+            {/* The Message Display Area - now with more vertical spacing */}
+            <div className="flex-1 space-y-6 overflow-y-auto pr-2 pb-4">
+                {messages.length > 0 ? (
+                    messages.map(msg => (
+                        <ChatMessage key={msg.id} message={msg} />
+                    ))
+                ) : (
+                    <div className="flex h-full items-center justify-center text-center text-sm text-gray-500 dark:text-zinc-500">
+                        <p>No messages yet. <br/> Be the first to start the conversation!</p>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input Area */}
-            <div className="mt-4 border-t border-gray-200 pt-4 dark:border-zinc-800">
+            {/* The Message Input Area */}
+            <div className="mt-auto pt-4">
                 {user ? (
-                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                    <form onSubmit={handleSendMessage} className="relative">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Type a message..."
-                            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            className="w-full rounded-lg border-zinc-700 bg-zinc-800 py-3 pl-4 pr-12 text-base shadow-sm focus:border-rose-500 focus:ring-rose-500"
                         />
                         <button
                             type="submit"
                             disabled={!newMessage.trim()}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                            className="absolute inset-y-0 right-0 flex items-center justify-center rounded-r-lg px-4 text-zinc-400 transition-colors hover:text-rose-500 disabled:cursor-not-allowed disabled:text-zinc-600"
                         >
-                            <PaperAirplaneIcon className="h-5 w-5" />
+                            <PaperAirplaneIcon className="h-6 w-6" />
                         </button>
                     </form>
                 ) : (
-                    <div className="text-center text-sm text-gray-500 dark:text-zinc-400">
-                        {/* The login link is now simpler, without the 'fromEvent' param */}
-                        Please <Link
-                        href={`/login?redirect=${redirectUrl}&reason=chat`}
-                        className="font-semibold text-indigo-600 hover:underline"
-                    >
-                        log in
-                    </Link> to join the chat.
-                    </div>
+                    <LoginPromptBar eventId={eventId} />
                 )}
             </div>
         </div>

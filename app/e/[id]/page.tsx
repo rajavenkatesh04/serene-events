@@ -226,7 +226,7 @@ function AttachmentCard({ attachment, isCompact = false }: {
                 <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
                         {isImage ? (
-                            <img src={attachment.url} alt={attachment.name} className="h-10 w-10 rounded object-cover" />
+                            <Image src={attachment.url} alt={attachment.name} className="h-10 w-10 rounded object-cover" />
                         ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 dark:bg-zinc-700">
                                 <DocumentTextIcon className="h-5 w-5 text-slate-400 dark:text-zinc-400" />

@@ -14,7 +14,7 @@ const SessionExpiredMessage = () => (
 // --- NEW: A dictionary of all our dynamic, enthusiastic messages ---
 const customMessages: { [key: string]: { title: string; subtitle: string } } = {
     default: {
-        title: "Ready to Make Some Noise? 📣",
+        title: "Ready to Make Some Noise?",
         subtitle: "Your all-access pass to creating and joining incredible events."
     },
     chat: {
