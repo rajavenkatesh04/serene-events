@@ -11,35 +11,43 @@ const SessionExpiredMessage = () => (
     </div>
 );
 
-// A dictionary of custom messages based on the 'reason' param from the URL
+// --- NEW: A dictionary of all our dynamic, enthusiastic messages ---
 const customMessages: { [key: string]: { title: string; subtitle: string } } = {
-    chat: {
-        title: "Join the Conversation!",
-        subtitle: "Sign in to send messages and engage with the event.",
+    default: {
+        title: "Ready to Make Some Noise? 📣",
+        subtitle: "Your all-access pass to creating and joining incredible events."
     },
-    // You can add more reasons here in the future!
-    // engage: { title: "Get Ready to Interact!", subtitle: "Sign in to participate in polls and Q&A." }
+    chat: {
+        title: "The Chat's Waiting for You! 💬",
+        subtitle: "Sign in and we'll get you dropping messages in no time."
+    },
+    engage: {
+        title: "Don't Just Watch, Participate! ✨",
+        subtitle: "Sign in to vote in polls, ask questions, and shape the conversation."
+    }
 };
 
 export default async function LoginPage({
                                             searchParams,
                                         }: {
-    // The searchParams are a Promise, so we type it as such
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-    // 1. Await the promise to get the resolved search params
     const resolvedSearchParams = await searchParams;
-
-    // 2. Use the resolved object to safely access properties
     const isSessionExpired = resolvedSearchParams?.['error'] === 'session_expired';
     const reason = resolvedSearchParams?.['reason'] as string;
     const redirectUrl = resolvedSearchParams?.['redirect'] as string;
 
-    // Use the custom message if a reason exists, otherwise use the default
-    const message = customMessages[reason] || {
-        title: "Welcome back",
-        subtitle: "The simplest way to manage your event communications."
-    };
+    // --- NEW: Updated logic to select the correct message ---
+    let message;
+    if (isSessionExpired) {
+        message = {
+            title: "Welcome Back! 👋",
+            subtitle: "Your session took a little nap. Let's sign you in to pick up where you left off."
+        };
+    } else {
+        // Use the message for the specific 'reason', or fall back to the default
+        message = customMessages[reason] || customMessages.default;
+    }
 
     return (
         <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
@@ -54,7 +62,6 @@ export default async function LoginPage({
                         </div>
                     </Link>
 
-                    {/* This section now displays the dynamic message */}
                     <div className="space-y-2">
                         <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-100">
                             {message.title}
@@ -72,7 +79,6 @@ export default async function LoginPage({
                 )}
 
                 <div className="space-y-4 pt-2">
-                    {/* 3. Pass the redirectUrl to the sign-in button */}
                     <GoogleSignInButton redirectUrl={redirectUrl} />
                     <p className="leading-relaxed px-4 text-center text-xs text-gray-500 dark:text-zinc-500">
                         By continuing, you agree to our{" "}
