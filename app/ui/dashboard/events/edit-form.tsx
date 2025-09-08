@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from 'react-dom';
-import { updateEvent, UpdateEventState } from '@/app/lib/actions';
+import { updateEvent, UpdateEventState } from '@/app/lib/actions/eventActions';
 import Link from 'next/link';
 import { Event } from '@/app/lib/definitions';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";

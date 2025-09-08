@@ -1,7 +1,7 @@
 // app/ui/dashboard/events/invitation-status.tsx
 'use client';
 
-import { revokeInvite } from '@/app/lib/actions';
+import { revokeInvite } from '@/app/lib/actions/eventActions';
 import { useFormStatus } from 'react-dom';
 import clsx from 'clsx';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';

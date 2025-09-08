@@ -1,9 +1,7 @@
-// UPDATED: No more local type definition
 import { BuildingOffice2Icon, StarIcon } from '@heroicons/react/24/outline';
-// UPDATED: Import the official interface from your definitions file
 import type { Organisation } from '@/app/lib/definitions';
 
-// MODIFIED: The component now expects the official 'Organisation' type
+
 export default function OrganizationCard({ organization }: { organization: Organisation }) {
     const tierStyles = {
         free: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300',

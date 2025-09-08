@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { BellIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { messaging } from '@/app/lib/firebase';
 import { getToken } from 'firebase/messaging';
-import { subscribeToTopic } from '@/app/lib/actions';
+import { subscribeToTopic } from '@/app/lib/actions/eventActions';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 
 type NotificationStatus = 'loading' | 'subscribed' | 'denied' | 'default' | 'unsupported';

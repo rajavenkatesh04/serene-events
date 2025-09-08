@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useRef, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
-import { createAnnouncement, CreateAnnouncementState, deleteAnnouncement } from '@/app/lib/actions';
+import { createAnnouncement, CreateAnnouncementState, deleteAnnouncement } from '@/app/lib/actions/eventActions';
 import { db, storage } from '@/app/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';

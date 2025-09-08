@@ -5,7 +5,6 @@ import ProfileAvatar from './profile-avatar';
 
 type ProfileHeaderProps = {
     displayName: string;
-    // Allow imageUrl to be null or undefined
     imageUrl: string | null | undefined;
     role: string;
 };

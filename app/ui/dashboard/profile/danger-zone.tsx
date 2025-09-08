@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { deleteSelfAccount, type DeleteAccountState } from '@/app/lib/actions';
+import { deleteSelfAccount, type DeleteAccountState } from '@/app/lib/actions/authActions';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 

@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { deleteEvent, type DeleteEventState } from '@/app/lib/actions';
+import { deleteEvent, type DeleteEventState } from '@/app/lib/actions/eventActions';
 import { ExclamationTriangleIcon, PencilIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 import Link from 'next/link';

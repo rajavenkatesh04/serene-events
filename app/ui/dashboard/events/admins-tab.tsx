@@ -3,7 +3,7 @@
 import { User, Invitation  } from '@/app/lib/definitions';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { sendInvite } from '@/app/lib/actions';
+import { sendInvite } from '@/app/lib/actions/eventActions';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 import RemoveAdminButton from './remove-admin-button';
 import InvitationStatusList from './invitation-status'; // Make sure this path is correct

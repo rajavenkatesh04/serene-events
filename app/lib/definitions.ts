@@ -2,8 +2,11 @@ export interface User {
     uid: string;
     email: string;
     displayName: string;
+    username: string; // The public, unique @handle for social features
+    profilePicUrl?: string;
     organizationId: string;
-    role: 'user' | 'admin' | 'owner' | 'master' ;
+    role: 'user' | 'admin' | 'owner' | 'master' | 'god';
+    attendedEvents: string[];
 }
 
 export interface Organisation {
@@ -95,4 +98,30 @@ export interface Poll {
     eventId: string;
     creatorUid: string;
     timeStamp: Date;
+}
+
+
+// Represents a chat room document in Firestore
+export interface Chat {
+    id: string; // The event's short ID (e.g., "ABCDEF") will be the chat ID
+    type: 'event'; // For now, we only have event chats
+    participantUids: string[]; // List of all users who have sent a message
+    lastMessage?: {
+        text: string;
+        senderUsername: string;
+        timestamp: FirestoreTimestamp;
+    };
+}
+
+// Represents a message document within a chat's sub-collection
+// Why do we store senderUsername and senderProfilePicUrl on every message?
+//     This is a common Firestore practice called denormalization.
+//     It saves us from having to look up the user's profile for every single message we display, ' + 'which makes the chat load much, much faster.
+export interface Message {
+    id: string;
+    senderUid: string;
+    senderUsername: string; // Store username directly for easy display
+    senderProfilePicUrl?: string; // Store avatar URL for easy display
+    text: string;
+    timestamp: FirestoreTimestamp;
 }

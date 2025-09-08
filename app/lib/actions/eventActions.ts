@@ -2,106 +2,13 @@
 
 import { z } from "zod";
 import { nanoid } from 'nanoid';
-import {signOut} from 'firebase/auth';
-import { auth } from '@/app/lib/firebase';
 import { auth as adminAuth } from '@/app/lib/firebase-admin';
-import { masterAuth  } from '@/app/lib/firebase-admin';
-import { adminDb, adminMessaging, adminStorage } from "@/app/lib/firebase-server"; // Ensure adminStorage is imported
+import { adminDb, adminMessaging, adminStorage } from "@/app/lib/firebase-server";
 import { Timestamp, FieldValue, DocumentSnapshot  } from 'firebase-admin/firestore';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { Message } from 'firebase-admin/messaging';
 
-
-
-// =================================================================================
-// --- USER & PROFILE ACTIONS ---
-// =================================================================================
-
-export type CompleteProfileState = {
-    message?: string;
-    errors?: {
-        organizationName?: string[];
-        server?: string[];
-    };
-};
-
-const CompleteProfileSchema = z.object({
-    organizationName: z.string().min(2, { message: "Organization name must be at least 2 characters." }),
-});
-
-export async function completeUserProfile(
-    prevState: CompleteProfileState | null,
-    formData: FormData
-): Promise<CompleteProfileState> {
-    const session = await adminAuth.getSession();
-    if (!session?.uid || !session.email) {
-        return { message: "Authentication error. Please sign in again." };
-    }
-
-    const validatedFields = CompleteProfileSchema.safeParse({
-        organizationName: formData.get('organizationName'),
-    });
-
-    if (!validatedFields.success) {
-        return {
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Invalid organization name.',
-        };
-    }
-    const { organizationName } = validatedFields.data;
-
-    try {
-        const userDocRef = adminDb.collection('users').doc(session.uid);
-        const userDoc = await userDocRef.get();
-
-        if (userDoc.exists) {
-            console.log("User profile already exists, redirecting to dashboard.");
-            redirect('/dashboard');
-        }
-
-        const batch = adminDb.batch();
-        const orgRef = adminDb.collection('organizations').doc();
-        batch.set(orgRef, {
-            name: organizationName,
-            ownerUid: session.uid,
-            subscriptionTier: 'free',
-        });
-
-        batch.set(userDocRef, {
-            uid: session.uid,
-            email: session.email,
-            displayName: session.name || "User",
-            organizationId: orgRef.id,
-            role: 'owner',
-        });
-
-        await batch.commit();
-
-    } catch (err) {
-        console.error("Profile Completion Error:", err);
-        return { message: "Failed to create your workspace. Please try again." };
-    }
-
-    revalidatePath('/dashboard');
-    redirect('/dashboard');
-}
-
-// =================================================================================
-// --- AUTH ACTIONS ---
-// =================================================================================
-
-export async function logout() {
-    try {
-        await signOut(auth);
-        const cookieStore = await cookies();
-        cookieStore.set('session', '', { maxAge: -1 });
-    } catch (error) {
-        console.error('Logout Error:', error);
-    }
-    redirect('/login');
-}
 
 // =================================================================================
 // --- EVENT ACTIONS ---
@@ -199,9 +106,6 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
 
 export type UpdateEventState = CreateEventState;
 
-// --- CHANGE 2: Completely updated the updateEvent function ---
-// This function now uses a new, more detailed schema and handles all the new fields,
-// including status, dates, and branding URLs.
 export async function updateEvent(prevState: UpdateEventState, formData: FormData): Promise<UpdateEventState> {
     const session = await adminAuth.getSession();
     if (!session?.uid) return { message: "Authentication error." };
@@ -301,8 +205,6 @@ export async function deleteEvent(prevState: DeleteEventState, formData: FormDat
             } catch (e) { console.error("Could not delete banner file:", e); }
         }
 
-        // --- NEW LOGIC START ---
-        // Find and delete all invitations associated with this event
         const invitationsRef = adminDb.collection('invitations');
         const invitationsQuery = invitationsRef.where('eventId', '==', eventData.id); // Query by the short event ID
         const invitationsSnapshot = await invitationsQuery.get();
@@ -314,7 +216,6 @@ export async function deleteEvent(prevState: DeleteEventState, formData: FormDat
             });
             await deleteBatch.commit();
         }
-        // --- NEW LOGIC END ---
 
         // Recursively delete subcollections
         const eventPath = eventDoc.ref.path;
@@ -332,6 +233,8 @@ export async function deleteEvent(prevState: DeleteEventState, formData: FormDat
     revalidatePath('/dashboard/events');
     redirect('/dashboard/events');
 }
+
+
 
 
 // =================================================================================
@@ -457,8 +360,7 @@ export async function deleteAnnouncement(formData: FormData) {
             throw new Error("Announcement not found.");
         }
 
-        // CRITICAL FIX: Properly handle the potentially undefined data
-        // TypeScript knows that .data() can return undefined, so we need to check for it
+
         const announcementData = announcementDoc.data();
 
         // This is the defensive programming approach - always verify data exists
@@ -480,10 +382,12 @@ export async function deleteAnnouncement(formData: FormData) {
         revalidatePath(`/dashboard/events/${eventId}`);
     } catch (error) {
         console.error("Delete Announcement Error:", error);
-        // In a real application, you might want to throw this error or handle it differently
-        // depending on your error handling strategy
+
     }
 }
+
+
+
 
 // =================================================================================
 // --- INVITATION ACTIONS ---
@@ -640,6 +544,7 @@ export async function removeAdmin(formData: FormData) {
 }
 
 
+
 // =================================================================================
 // --- NOTIFICATION ACTIONS ---
 // =================================================================================
@@ -668,6 +573,7 @@ export async function subscribeToTopic(token: string, eventId: string) {
         return { success: false, error: 'Could not subscribe to topic.' };
     }
 }
+
 
 
 // =================================================================================
@@ -719,229 +625,3 @@ async function findEventAndVerifyAdmin(eventId: string, userId: string): Promise
 
     return eventDoc;
 }
-
-
-// =================================================================================
-// --- MASTER ACTIONS ---
-// =================================================================================
-
-export type DeleteUserState = {
-    message?: string;
-};
-
-export async function deleteUsers(prevState: { message?: string }, formData: FormData): Promise<{ message?: string }> {
-
-    const session = await adminAuth.getSession();
-    if (!session?.uid) {
-        return { message: "Authentication error. You must be logged in." };
-    }
-
-    try {
-        const performingUserDoc = await adminDb.doc(`users/${session.uid}`).get();
-        if (!performingUserDoc.exists || performingUserDoc.data()?.role !== 'god') {
-            return { message: "Permission denied. This action requires god-level privileges." };
-        }
-    } catch (error) {
-        console.error("Error verifying god role:", error);
-        return { message: "A server error occurred while verifying permissions." };
-    }
-
-    const uidsToDelete = formData.getAll('uidsToDelete') as string[];
-    if (uidsToDelete.length === 0) {
-        return { message: "No users selected for deletion." };
-    }
-
-    let deletedCount = 0;
-    let errorCount = 0;
-
-    for (const uid of uidsToDelete) {
-        // Note: There is no self-deletion check, as there is no session to check against.
-        // You can accidentally delete your own account with this action.
-        try {
-            const userDocToDelete = await adminDb.doc(`users/${uid}`).get();
-            if (!userDocToDelete.exists) {
-                // If user doc is gone, still try to delete from Auth
-                await masterAuth.deleteUser(uid);
-                deletedCount++;
-                continue;
-            }
-
-            const userData = userDocToDelete.data()!;
-
-            // Full cascade delete logic for 'owner' role
-            if (userData.role === 'owner' && userData.organizationId) {
-                const orgId = userData.organizationId;
-                const orgRef = adminDb.doc(`organizations/${orgId}`);
-                const eventsSnapshot = await orgRef.collection('events').get();
-
-                for (const eventDoc of eventsSnapshot.docs) {
-                    const eventData = eventDoc.data();
-                    const eventPath = eventDoc.ref.path;
-                    const bucket = adminStorage.bucket();
-
-                    if (eventData.logoUrl) {
-                        try {
-                            const logoPath = new URL(eventData.logoUrl).pathname.split('/o/')[1].split('?')[0];
-                            await bucket.file(decodeURIComponent(logoPath)).delete();
-                        } catch (e) { console.error(`Could not delete logo for event ${eventData.id}:`, e); }
-                    }
-                    if (eventData.bannerUrl) {
-                        try {
-                            const bannerPath = new URL(eventData.bannerUrl).pathname.split('/o/')[1].split('?')[0];
-                            await bucket.file(decodeURIComponent(bannerPath)).delete();
-                        } catch (e) { console.error(`Could not delete banner for event ${eventData.id}:`, e); }
-                    }
-
-                    const announcementsSnapshot = await eventDoc.ref.collection('announcements').get();
-                    for (const announcementDoc of announcementsSnapshot.docs) {
-                        const attachment = announcementDoc.data().attachment;
-                        if (attachment && attachment.path) {
-                            try { await bucket.file(attachment.path).delete(); } catch (e) { console.error(`Could not delete attachment ${attachment.path}:`, e); }
-                        }
-                    }
-
-                    const invitesSnapshot = await adminDb.collection('invitations').where('eventId', '==', eventData.id).get();
-                    if (!invitesSnapshot.empty) {
-                        const batch = adminDb.batch();
-                        invitesSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-                        await batch.commit();
-                    }
-
-                    await deleteCollection(`${eventPath}/subscribers`, 50);
-                    await deleteCollection(`${eventPath}/announcements`, 50);
-                    await eventDoc.ref.delete();
-                }
-                await orgRef.delete();
-            }
-
-            await userDocToDelete.ref.delete();
-            await masterAuth.deleteUser(uid);
-            deletedCount++;
-        } catch (error) {
-            console.error(`Failed to completely delete user ${uid}:`, error);
-            errorCount++;
-        }
-    }
-
-    let message = '';
-    if (deletedCount > 0) message += `Successfully deleted ${deletedCount} user(s) and all their data. `;
-    if (errorCount > 0) message += `Failed to delete ${errorCount} user(s). Check logs for details.`;
-
-    revalidatePath('/dashboard/master');
-    return { message };
-}
-
-
-// =================================================================================
-// --- USER & PROFILE ACTIONS ---
-// =================================================================================
-
-
-
-export type UpdateProfileState = {
-    errors?: {
-        displayName?: string[];
-    };
-    message?: string | null;
-    status: 'idle' | 'success' | 'error';
-};
-
-const UpdateProfileSchema = z.object({
-    displayName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-});
-
-export async function updateUserProfile(
-    prevState: UpdateProfileState,
-    formData: FormData
-): Promise<UpdateProfileState> {
-    const session = await adminAuth.getSession();
-    if (!session?.uid) {
-        return { message: "Authentication error.", status: 'error', errors: {} };
-    }
-
-    const validatedFields = UpdateProfileSchema.safeParse({
-        displayName: formData.get('displayName'),
-    });
-
-    if (!validatedFields.success) {
-        return {
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Invalid display name.',
-            status: 'error',
-        };
-    }
-    const { displayName } = validatedFields.data;
-
-    try {
-        // Create a batch to update both Auth and Firestore at the same time
-        const userDocRef = adminDb.collection('users').doc(session.uid);
-        const batch = adminDb.batch();
-
-        // Update Firestore document
-        batch.update(userDocRef, { displayName: displayName });
-
-        // This promise updates Firebase Authentication
-        const updateUserPromise = masterAuth.updateUser(session.uid, { displayName: displayName });
-
-        // Run both updates
-        await Promise.all([batch.commit(), updateUserPromise]);
-
-    } catch (err) {
-        console.error("Profile Update Error:", err);
-        return { message: "Failed to update your profile. Please try again.", status: 'error', errors: {} };
-    }
-
-    // Revalidate paths to ensure data is fresh across the app
-    revalidatePath('/dashboard', 'layout');
-    return { message: "Profile updated successfully!", status: 'success', errors: {} };
-}
-
-
-export type DeleteAccountState = {
-    message?: string;
-    status: 'idle' | 'error';
-};
-
-export async function deleteSelfAccount(
-    prevState: DeleteAccountState,
-    formData: FormData
-): Promise<DeleteAccountState> {
-    const session = await adminAuth.getSession();
-    if (!session?.uid) {
-        return { message: "Authentication error.", status: 'error' };
-    }
-
-    try {
-        const userDocRef = adminDb.doc(`users/${session.uid}`);
-        const userDoc = await userDocRef.get();
-
-        if (!userDoc.exists) {
-            // If the user doc is gone, still try to delete the auth user
-            await masterAuth.deleteUser(session.uid);
-            console.log(`Auth user ${session.uid} deleted, but Firestore doc was missing.`);
-            // Continue to logout logic
-        } else {
-            const userData = userDoc.data();
-            // CRITICAL: Prevent owners from deleting their accounts
-            if (userData?.role === 'owner') {
-                return { message: "Account deletion failed. Owners must transfer ownership or delete the organization.", status: 'error' };
-            }
-            // If not an owner, proceed with deletion
-            await userDocRef.delete();
-            await masterAuth.deleteUser(session.uid);
-        }
-
-        // Clear the session cookie
-        const cookieStore = await cookies();
-        cookieStore.set('session', '', { maxAge: -1 });
-
-    } catch (err) {
-        console.error("Self-Delete Account Error:", err);
-        return { message: "Failed to delete your account. Please try again.", status: 'error' };
-    }
-
-    // Redirect to login page after successful deletion
-    redirect('/login');
-}
-
-

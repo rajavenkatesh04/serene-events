@@ -1,11 +1,11 @@
 'use client';
 
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth, db } from "@/app/lib/firebase";
-import { useState } from "react";
+import { useState } from 'react';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, db } from '@/app/lib/firebase';
 import { doc, getDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
-import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
+import { useRouter } from 'next/navigation';
+import LoadingSpinner from './dashboard/loading-spinner';
 
 // Google Icon SVG component
 const GoogleIcon = () => (
@@ -18,7 +18,8 @@ const GoogleIcon = () => (
     </svg>
 );
 
-export default function GoogleSignInButton() {
+// The component now accepts an optional redirectUrl prop
+export default function GoogleSignInButton({ redirectUrl }: { redirectUrl?: string }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -46,11 +47,11 @@ export default function GoogleSignInButton() {
             const userDoc = await getDoc(userRef);
 
             if (userDoc.exists()) {
-                // User already has a profile, send them to the dashboard
-                router.push('/dashboard');
+                // User already has a profile. Redirect them to the requested URL,
+                // or fall back to the dashboard.
+                router.push(redirectUrl || '/dashboard');
             } else {
                 // This is a brand new user. Send them to complete their profile.
-                // This single step replaces all the complex domain-claiming logic.
                 router.push('/complete-profile');
             }
 

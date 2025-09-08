@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/app/ui/themes/theme-provider";
 import { Analytics } from "@/app/lib/analytics";
 import CookieConsentBanner from "@/app/ui/cookie-banner";
+import {AuthProvider} from "@/app/lib/firebase/auth";
 
 
 const calSans = Cal_Sans({
@@ -35,7 +36,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-            {children}
+            <AuthProvider>
+                {children}
+            </AuthProvider>
+
             <CookieConsentBanner />
             <Analytics />
         </ThemeProvider>

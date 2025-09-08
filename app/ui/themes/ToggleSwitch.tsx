@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes';
 import { MoonIcon, SunIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
-import clsx from 'clsx'; // Import clsx
+import clsx from 'clsx';
 
 export default function ToggleSwitch() {
     const { theme, setTheme, resolvedTheme } = useTheme();

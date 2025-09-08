@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { deleteUsers } from '@/app/lib/actions';
+import { deleteUsers } from '@/app/lib/actions/godModeActions';
 import { User } from '@/app/lib/definitions';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 

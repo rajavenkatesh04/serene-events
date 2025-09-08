@@ -4,7 +4,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import Link from 'next/link';
 import { PowerIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { logout } from '@/app/lib/actions';
+import { logout } from '@/app/lib/actions/authActions';
 import UserAvatar from './user-avatar';
 
 // Simplified props, as role is no longer displayed here

@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { updateUserProfile, type UpdateProfileState } from '@/app/lib/actions';
+import { updateUserProfile, type UpdateProfileState } from '@/app/lib/actions/authActions';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/solid';
 

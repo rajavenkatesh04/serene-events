@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormStatus } from 'react-dom';
-import { removeAdmin } from '@/app/lib/actions';
+import { removeAdmin } from '@/app/lib/actions/eventActions';
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 export default function RemoveAdminButton({ orgId, eventId, adminUidToRemove }: { orgId: string, eventId: string, adminUidToRemove: string }) {

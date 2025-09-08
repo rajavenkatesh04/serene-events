@@ -7,7 +7,6 @@ import ProfileForm from '@/app/ui/dashboard/profile/profile-form';
 import OrganizationCard from '@/app/ui/dashboard/profile/organization-card';
 import DangerZone from '@/app/ui/dashboard/profile/danger-zone';
 import Breadcrumbs from '@/app/ui/dashboard/events/breadcrumbs';
-// --- NEW: Import the client component we just made ---
 import ProfileHeader from '@/app/ui/dashboard/profile/profile-header';
 
 export default async function ProfilePage() {
