@@ -95,6 +95,9 @@ export default function EventChatPage() {
         return <div className="flex items-center justify-center py-10"><LoadingSpinner /></div>;
     }
 
+    // --- NEW: Define the redirect URL and encode it for safety ---
+    const redirectUrl = encodeURIComponent(`/e/${eventId}?tab=chat`);
+
     return (
         <div className="flex h-[60vh] flex-col rounded-lg border border-gray-200/80 bg-gray-50/50 p-4 dark:border-zinc-800/50 dark:bg-zinc-900/50">
             {/* Message Display Area */}
@@ -127,7 +130,8 @@ export default function EventChatPage() {
                 ) : (
                     <div className="text-center text-sm text-gray-500 dark:text-zinc-400">
                         Please <Link
-                        href={`/login?redirect=${encodeURIComponent(`/e/${eventId}?tab=chat`)}&fromEvent=true&reason=chat`}
+                        // --- MODIFIED: Use the safely encoded URL ---
+                        href={`/login?redirect=${redirectUrl}&fromEvent=true&reason=chat`}
                         className="font-semibold text-indigo-600 hover:underline"
                     >
                         log in

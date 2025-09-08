@@ -1,33 +1,16 @@
 import Link from 'next/link';
 import { ArchiveBoxIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { auth } from '@/app/lib/firebase-admin';
-import { fetchUserProfile } from '@/app/lib/data';
-import { adminDb } from '@/app/lib/firebase-server';
-import { Event } from '@/app/lib/definitions';
-
-// A new data fetcher to get events by their IDs
-async function fetchEventsByIds(eventIds: string[]): Promise<Event[]> {
-    if (!eventIds || eventIds.length === 0) {
-        return [];
-    }
-    // Firestore 'in' queries are limited to 30 items per query.
-    // For a larger scale app, you might need to batch these queries.
-    const eventQuery = adminDb.collectionGroup('events').where('id', 'in', eventIds);
-    const snapshot = await eventQuery.get();
-    return snapshot.docs.map(doc => doc.data() as Event);
-}
-
+import { fetchAttendedEvents } from '@/app/lib/data'; // Import our new function
 
 export default async function PastEventsPage() {
     const session = await auth.getSession();
     if (!session) {
-        // Handle case where user is not logged in, though middleware should prevent this
-        return null;
+        return null; // Middleware should prevent this
     }
 
-    const userProfile = await fetchUserProfile(session.uid);
-    const attendedEventIds = userProfile?.attendedEvents || [];
-    const pastEvents = await fetchEventsByIds(attendedEventIds);
+    // The page logic is now beautifully simple
+    const pastEvents = await fetchAttendedEvents(session.uid);
 
     return (
         <main>
@@ -48,7 +31,7 @@ export default async function PastEventsPage() {
                                 className="group block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
                             >
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{event.title}</h3>
-                                <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400 line-clamp-2">{event.description}</p>
+                                <p className="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-zinc-400">{event.description}</p>
                                 <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm dark:border-zinc-800">
                                     <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-400">
                                         <CalendarDaysIcon className="h-4 w-4" />

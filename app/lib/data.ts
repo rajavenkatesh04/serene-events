@@ -238,3 +238,35 @@ export async function fetchAllUsers(): Promise<User[]> {
         return [];
     }
 }
+
+
+// A new data fetcher to get events by their IDs
+async function fetchEventsByIds(eventIds: string[]): Promise<Event[]> {
+    if (!eventIds || eventIds.length === 0) {
+        return [];
+    }
+    // Firestore 'in' queries are limited to 30 items per query.
+    // For a larger scale app, you might need to batch these queries.
+    const eventQuery = adminDb.collectionGroup('events').where('id', 'in', eventIds);
+    const snapshot = await eventQuery.get();
+    return snapshot.docs.map(doc => doc.data() as Event);
+}
+
+// --- ADD THIS NEW FUNCTION ---
+export async function fetchAttendedEvents(userId: string): Promise<Event[]> {
+    noStore();
+    try {
+        const userProfile = await fetchUserProfile(userId);
+        const attendedEventIds = userProfile?.attendedEvents || [];
+
+        if (attendedEventIds.length === 0) {
+            return [];
+        }
+
+        const attendedEvents = await fetchEventsByIds(attendedEventIds);
+        return attendedEvents;
+    } catch (error) {
+        console.error("Database Error fetching attended events:", error);
+        return [];
+    }
+}
