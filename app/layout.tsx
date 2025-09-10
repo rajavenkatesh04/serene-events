@@ -5,8 +5,6 @@ import { ThemeProvider } from "@/app/ui/themes/theme-provider";
 import { Analytics } from "@/app/lib/analytics";
 import CookieConsentBanner from "@/app/ui/cookie-banner";
 import {AuthProvider} from "@/app/lib/firebase/auth";
-import PwaRegistry from "@/app/ui/PwaRegistry";
-
 
 const calSans = Cal_Sans({
     weight: ['400'],
@@ -20,7 +18,8 @@ export const metadata: Metadata = {
         default: 'Luna',
     },
     description: 'The better platform to spice up your events',
-    metadataBase: new URL('https://luna-ashy.vercel.app/'),
+    metadataBase: new URL('https://luna-83jo.vercel.app/'),
+    manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -31,7 +30,6 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
         <body className={`${calSans.className} antialiased bg-white text-gray-900 dark:bg-zinc-950 dark:text-zinc-100`}>
-        <PwaRegistry />
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -41,13 +39,9 @@ export default function RootLayout({
             <AuthProvider>
                 {children}
             </AuthProvider>
-
             <CookieConsentBanner />
             <Analytics />
         </ThemeProvider>
-
-
-
         </body>
         </html>
     );

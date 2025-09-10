@@ -30,7 +30,6 @@ import NotificationButton from "@/app/ui/NotificationButton";
 import { AnnouncementsFeedSkeleton } from '@/app/ui/skeletons';
 import { formatRelativeDate } from '@/app/lib/utils';
 import { APIProvider, Map, AdvancedMarker, useMap, InfoWindow } from '@vis.gl/react-google-maps';
-import NotificationRefreshAlert from "@/app/ui/NotificationRefreshAlert";
 import { ScheduledScreen, PausedScreen, EndedScreen, CancelledScreen } from '@/app/e/ui/StatusScreens';
 import EventChatPage from "@/app/e/[id]/chat/page";
 import EngagePage from "@/app/e/[id]/engage/page";
@@ -890,7 +889,6 @@ function EventPageClientUI({ eventId }: { eventId: string }) {
                                             isFeedLoading ? <AnnouncementsFeedSkeleton /> : (
                                                 <>
                                                     {!isSearchActive && <PinnedCarousel announcements={pinnedAnnouncements} />}
-                                                    {!isSearchActive && <NotificationRefreshAlert eventId={eventId} />}
                                                     <div ref={liveUpdatesRef} className="scroll-mt-24">
                                                         <div className="flex items-center justify-between mb-6">
                                                             <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2">

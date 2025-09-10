@@ -46,19 +46,10 @@ export default function NotificationButton({ eventId }: { eventId: string }) {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                // This is the key change: encode the config and pass it to the service worker
-                const firebaseConfig = {
-                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-                    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-                    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-                    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-                    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-                };
-                const encodedConfig = encodeURIComponent(JSON.stringify(firebaseConfig));
-                const swUrl = `/firebase-messaging-sw.js?firebaseConfig=${encodedConfig}`;
-
-                const swRegistration = await navigator.serviceWorker.register(swUrl);
+                // --- FIX APPLIED ---
+                // This now correctly registers the service worker directly.
+                // It relies on the service worker having its own hardcoded config, which is much more reliable.
+                const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                 const currentToken = await getToken(messaging, { serviceWorkerRegistration: swRegistration });
 
                 if (currentToken) {
@@ -66,6 +57,8 @@ export default function NotificationButton({ eventId }: { eventId: string }) {
                     localStorage.setItem(`subscribed_to_${eventId}`, 'true');
                     setStatus('subscribed');
                 } else {
+                    // This can happen if getToken fails for some reason
+                    console.error('Failed to get FCM token.');
                     setStatus('denied');
                 }
             } else {
@@ -73,7 +66,7 @@ export default function NotificationButton({ eventId }: { eventId: string }) {
             }
         } catch (error) {
             console.error('An error occurred while subscribing to notifications: ', error);
-            setStatus('default');
+            setStatus('default'); // Reset to default on error
         }
     };
 
@@ -84,7 +77,7 @@ export default function NotificationButton({ eventId }: { eventId: string }) {
         return <StatusBadge icon={ExclamationTriangleIcon} message="Notification permissions are blocked." className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300" />;
     }
     if (status === 'unsupported') {
-        return <StatusBadge icon={XCircleIcon} message="Notifications are not supported on this device(iOS)." className="bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300" />;
+        return <StatusBadge icon={XCircleIcon} message="Notifications are not supported on this browser/device." className="bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300" />;
     }
 
     return (

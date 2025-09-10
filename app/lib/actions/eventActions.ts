@@ -314,7 +314,7 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
             data: {
                 title: eventData.title || 'Event Update',
                 body: announcementTitle,
-                url: `${baseUrl}/e/${eventData.id}`
+                url: `${baseUrl}/e/${eventId}`
             },
             android: {
                 priority: 'high' as const,
