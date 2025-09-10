@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/app/ui/themes/theme-provider";
 import { Analytics } from "@/app/lib/analytics";
 import CookieConsentBanner from "@/app/ui/cookie-banner";
 import {AuthProvider} from "@/app/lib/firebase/auth";
+import PwaRegistry from "@/app/ui/PwaRegistry";
 
 
 const calSans = Cal_Sans({
@@ -30,6 +31,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
         <body className={`${calSans.className} antialiased bg-white text-gray-900 dark:bg-zinc-950 dark:text-zinc-100`}>
+        <PwaRegistry />
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
