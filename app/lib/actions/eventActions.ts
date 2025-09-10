@@ -308,7 +308,7 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
         });
 
         const topic = `event_${eventData.id.replace(/-/g, '_')}`;
-        const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
         const messagePayload: Message =  {
             topic: topic,
             data: {
