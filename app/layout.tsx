@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/app/ui/themes/theme-provider";
 import { Analytics } from "@/app/lib/analytics";
 import CookieConsentBanner from "@/app/ui/cookie-banner";
-import {AuthProvider} from "@/app/lib/firebase/auth";
+import { AuthProvider } from "@/app/lib/firebase/auth";
 
 const calSans = Cal_Sans({
     weight: ['400'],
@@ -20,17 +20,20 @@ export const metadata: Metadata = {
     description: 'The better platform to spice up your events',
     metadataBase: new URL('https://luna-83jo.vercel.app/'),
     manifest: "/manifest.webmanifest",
-
     icons: {
-        icon: '/icons/favicon-32x32.png', // Default icon for browsers
-        shortcut: '/icons/favicon.ico',   // For legacy browsers
-        apple: '/icons/apple-touch-icon.png', // For Apple devices
+        icon: '/icons/favicon-32x32.png',
+        shortcut: '/favicon.ico',
+        apple: '/icons/apple-touch-icon.png',
         other: [
             {
                 rel: 'icon',
                 url: '/icons/favicon-16x16.png',
                 sizes: '16x16'
             },
+            {
+                rel: 'msapplication-config',
+                url: '/browserconfig.xml' // Points to the root of public/
+            }
         ],
     },
 };

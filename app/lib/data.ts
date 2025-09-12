@@ -81,6 +81,114 @@ export async function fetchLatestEvents(userId: string) {
     }
 }
 
+// Fetches the 5 most recent events a user is an admin of
+export async function fetchAllEvents(userId: string) {
+    noStore();
+    try {
+        // Use Admin SDK syntax for collection group query
+        const eventsSnapshot = await adminDb.collectionGroup('events')
+            .where("admins", "array-contains", userId)
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        const events = eventsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                docId: doc.id,
+                createdAt: serializeTimestamp(data.createdAt),
+                startsAt: serializeTimestamp(data.startsAt),
+                endsAt: serializeTimestamp(data.endsAt),
+            } as Event;
+        });
+
+        return events;
+    } catch (error) {
+        console.error('Database Error fetching latest events:', error);
+        return [];
+    }
+}
+
+
+
+// In app/lib/data.ts
+
+const ITEMS_PER_PAGE = 6;
+
+export async function fetchFilteredPaginatedEvents(
+    userId: string,
+    filter: string,
+    currentPage: number,
+) {
+    noStore();
+    try {
+        const baseQuery = adminDb.collectionGroup('events');
+        let query;
+
+        // A flag to know if we need to filter later
+        let needsManualFilter = false;
+
+        switch (filter) {
+            case 'owner':
+                query = baseQuery.where('ownerUid', '==', userId);
+                break;
+
+            case 'admin':
+                // 1. WE ASK A SIMPLER QUESTION
+                // We REMOVE the unsupported .where('ownerUid', '!=', userId)
+                // This query just gets all events where the user is an admin, including ones they own.
+                // This query IS supported by Firestore and can be indexed.
+                query = baseQuery.where('admins', 'array-contains', userId);
+
+                // 2. We set a flag to manually filter these results in our code later.
+                needsManualFilter = true;
+                break;
+
+            default: // 'all'
+                query = baseQuery.where('admins', 'array-contains', userId);
+                break;
+        }
+
+        // This part of the query is now valid for all cases
+        const fullQuery = query
+            .orderBy('createdAt', 'desc')
+            .limit(ITEMS_PER_PAGE)
+            .offset((currentPage - 1) * ITEMS_PER_PAGE);
+
+        const eventsSnapshot = await fullQuery.get();
+
+        let events = eventsSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                ...data,
+                docId: doc.id,
+                createdAt: serializeTimestamp(data.createdAt),
+                startsAt: serializeTimestamp(data.startsAt),
+                endsAt: serializeTimestamp(data.endsAt),
+            } as Event;
+        });
+
+        // 3. IF it was the 'admin' filter, we now manually remove the events the user owns.
+        if (needsManualFilter) {
+            events = events.filter(event => event.ownerUid !== userId);
+        }
+
+        // To make pagination numbers more accurate, we'll do a separate count.
+        // NOTE: For very large datasets, this is inefficient, but for most apps it's fine.
+        const countQuery = query; // The base query without pagination
+        const countSnapshot = await countQuery.count().get();
+        const totalCount = countSnapshot.data().count;
+        // For the admin filter, the total page count might be slightly off, but it's the best we can do.
+        const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+        return { events, totalPages };
+
+    } catch (error) {
+        console.error('Database Error fetching filtered events:', error);
+        return { events: [], totalPages: 0 };
+    }
+}
+
 
 // Fetches the complete user profile
 export async function fetchUserProfile(userId: string) {
