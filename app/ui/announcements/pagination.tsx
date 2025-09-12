@@ -1,14 +1,56 @@
 'use client';
 
+import { FormEvent, useState, useEffect } from 'react';
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import Link from 'next/link';
-import { generatePagination } from '@/app/lib/utils';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+
+// The input component remains the same, as its functionality is perfect.
+function PageInput({ currentPage, totalPages }: { currentPage: number, totalPages: number }) {
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const { push } = useRouter();
+    const [page, setPage] = useState(currentPage.toString());
+
+    useEffect(() => {
+        setPage(currentPage.toString());
+    }, [currentPage]);
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const params = new URLSearchParams(searchParams);
+        let newPage = parseInt(page, 10);
+
+        if (isNaN(newPage) || newPage < 1) {
+            newPage = 1;
+        } else if (newPage > totalPages) {
+            newPage = totalPages;
+        }
+
+        params.set('page', newPage.toString());
+        push(`${pathname}?${params.toString()}`);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex items-center">
+            <label htmlFor="page-input" className="sr-only">Current Page</label>
+            <input
+                id="page-input"
+                type="text"
+                inputMode="numeric"
+                value={page}
+                onChange={(e) => setPage(e.target.value.replace(/[^0-9]/g, ''))}
+                // Updated styling for better cohesion with the dark theme
+                className="w-12 border-0 bg-transparent p-0 text-center text-sm font-medium text-zinc-100 ring-1 ring-inset ring-zinc-700 focus:ring-2 focus:ring-inset focus:ring-rose-500 rounded-md"
+                aria-label={`Page ${currentPage} of ${totalPages}, enter a page number to jump`}
+            />
+        </form>
+    )
+}
+
 
 export default function Pagination({ totalPages }: { totalPages: number }) {
-    // NOTE: Uncomment this code in Chapter 11
-
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
@@ -19,79 +61,34 @@ export default function Pagination({ totalPages }: { totalPages: number }) {
         return `${pathname}?${params.toString()}`;
     };
 
-    const allPages = generatePagination(currentPage, totalPages);
+    if (totalPages <= 1) {
+        return null;
+    }
 
+    // New minimalist layout without the heavy container
     return (
-        <>
+        <nav aria-label="Pagination" className="flex items-center justify-center gap-6">
+            <PaginationArrow
+                direction="left"
+                href={createPageURL(currentPage - 1)}
+                isDisabled={currentPage <= 1}
+            />
 
-            <div className="inline-flex">
-                <PaginationArrow
-                    direction="left"
-                    href={createPageURL(currentPage - 1)}
-                    isDisabled={currentPage <= 1}
-                />
-
-                <div className="flex -space-x-px">
-                    {allPages.map((page, index) => {
-                        let position: 'first' | 'last' | 'single' | 'middle' | undefined;
-
-                        if (index === 0) position = 'first';
-                        if (index === allPages.length - 1) position = 'last';
-                        if (allPages.length === 1) position = 'single';
-                        if (page === '...') position = 'middle';
-
-                        return (
-                            <PaginationNumber
-                                key={`${page}-${index}`}
-                                href={createPageURL(page)}
-                                page={page}
-                                position={position}
-                                isActive={currentPage === page}
-                            />
-                        );
-                    })}
-                </div>
-
-                <PaginationArrow
-                    direction="right"
-                    href={createPageURL(currentPage + 1)}
-                    isDisabled={currentPage >= totalPages}
-                />
+            <div className="flex items-center gap-3 text-sm font-medium text-zinc-400">
+                Page
+                <PageInput currentPage={currentPage} totalPages={totalPages} />
+                of {totalPages}
             </div>
-        </>
+
+            <PaginationArrow
+                direction="right"
+                href={createPageURL(currentPage + 1)}
+                isDisabled={currentPage >= totalPages}
+            />
+        </nav>
     );
 }
 
-function PaginationNumber({
-                              page,
-                              href,
-                              isActive,
-                              position,
-                          }: {
-    page: number | string;
-    href: string;
-    position?: 'first' | 'last' | 'middle' | 'single';
-    isActive: boolean;
-}) {
-    const className = clsx(
-        'flex h-10 w-10 items-center justify-center text-sm border',
-        {
-            'rounded-l-md': position === 'first' || position === 'single',
-            'rounded-r-md': position === 'last' || position === 'single',
-            'z-10 bg-blue-600 border-blue-600 text-white': isActive,
-            'hover:bg-gray-100': !isActive && position !== 'middle',
-            'text-gray-300': position === 'middle',
-        },
-    );
-
-    return isActive || position === 'middle' ? (
-        <div className={className}>{page}</div>
-    ) : (
-        <Link href={href} className={className}>
-            {page}
-        </Link>
-    );
-}
 
 function PaginationArrow({
                              href,
@@ -102,27 +99,26 @@ function PaginationArrow({
     direction: 'left' | 'right';
     isDisabled?: boolean;
 }) {
+    // Redesigned arrows with interactive red accent hover
     const className = clsx(
-        'flex h-10 w-10 items-center justify-center rounded-md border',
+        'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
         {
-            'pointer-events-none text-gray-300': isDisabled,
-            'hover:bg-gray-100': !isDisabled,
-            'mr-2 md:mr-4': direction === 'left',
-            'ml-2 md:ml-4': direction === 'right',
+            'pointer-events-none text-zinc-700': isDisabled,
+            'text-zinc-400 hover:bg-rose-600 hover:text-white': !isDisabled,
         },
     );
 
     const icon =
         direction === 'left' ? (
-            <ArrowLeftIcon className="w-4" />
+            <ArrowLeftIcon className="w-5" />
         ) : (
-            <ArrowRightIcon className="w-4" />
+            <ArrowRightIcon className="w-5" />
         );
 
     return isDisabled ? (
         <div className={className}>{icon}</div>
     ) : (
-        <Link className={className} href={href}>
+        <Link className={className} href={href} aria-label={direction === 'left' ? "Go to previous page" : "Go to next page"}>
             {icon}
         </Link>
     );

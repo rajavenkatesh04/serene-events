@@ -16,6 +16,7 @@ interface FilterButtonProps {
     count?: number;
 }
 
+// Redesigned FilterButton for the new "tab" style bar
 function FilterButton({ filter, currentFilter, label, count }: FilterButtonProps) {
     const isActive = currentFilter === filter;
     const searchParams = new URLSearchParams();
@@ -25,27 +26,25 @@ function FilterButton({ filter, currentFilter, label, count }: FilterButtonProps
         <Link
             href={`/dashboard/events?${searchParams.toString()}`}
             className={`
-                flex-grow justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4
+                flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors
                 ${isActive
-                ? 'bg-gray-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                ? 'border-rose-600 text-rose-600 dark:border-rose-500 dark:text-rose-500'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200'
             }
             `}
         >
-            <div className="flex items-center gap-2">
-                {label}
-                {count !== undefined && (
-                    <span className={`
-                        rounded-full px-2 py-1 text-xs
+            {label}
+            {count !== undefined && (
+                <span className={`
+                        rounded-full px-2 py-0.5 text-xs
                         ${isActive
-                        ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                        : 'bg-gray-200 text-gray-600 dark:bg-zinc-700 dark:text-zinc-400'
-                    }
+                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
+                }
                     `}>
                         {count}
                     </span>
-                )}
-            </div>
+            )}
         </Link>
     );
 }
@@ -69,29 +68,31 @@ async function EventsList({
 
     return (
         <>
-            {/* Filter Buttons */}
-            <div className="mb-6 flex gap-2 sm:gap-3">
-                <FilterButton
-                    filter="all"
-                    currentFilter={filter}
-                    label="All Events"
-                    count={counts?.all}
-                />
-                <FilterButton
-                    filter="ownedByMe"
-                    currentFilter={filter}
-                    label="My Events"
-                    count={counts?.ownedByMe}
-                />
-                <FilterButton
-                    filter="adminOf"
-                    currentFilter={filter}
-                    label="Invited"
-                    count={counts?.adminOf}
-                />
+            {/* New Tab-Style Filter Bar */}
+            <div className="mb-6 border-b border-gray-200 dark:border-zinc-800">
+                <div className="-mb-px flex space-x-4 overflow-x-auto sm:space-x-6">
+                    <FilterButton
+                        filter="all"
+                        currentFilter={filter}
+                        label="All Events"
+                        count={counts?.all}
+                    />
+                    <FilterButton
+                        filter="ownedByMe"
+                        currentFilter={filter}
+                        label="My Events"
+                        count={counts?.ownedByMe}
+                    />
+                    <FilterButton
+                        filter="adminOf"
+                        currentFilter={filter}
+                        label="Invited"
+                        count={counts?.adminOf}
+                    />
+                </div>
             </div>
 
-            <div className="flex flex-col justify-between" style={{ minHeight: '60vh' }}>
+            <div className="flex min-h-[60vh] flex-col justify-between">
                 <div className="space-y-4">
                     {events.length > 0 ? (
                         events.map(event => {
