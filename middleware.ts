@@ -1,6 +1,9 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Simple in-memory cache for authentication status
+const authCache = new Map();
+
 export async function middleware(request: NextRequest) {
     const url = request.nextUrl;
     const sessionCookie = request.cookies.get('session')?.value;
@@ -13,17 +16,34 @@ export async function middleware(request: NextRequest) {
 
     // --- If a session cookie exists, verify it and check profile status ---
     if (sessionCookie) {
-        // Construct the absolute URL for the API call
-        const checkStatusUrl = new URL('/api/auth/check-status', request.url);
+        // Check cache first
+        const cacheKey = `auth_${sessionCookie}`;
+        const cachedAuth = authCache.get(cacheKey);
 
-        // Forward the session cookie to the API route
-        const response = await fetch(checkStatusUrl, {
-            headers: {
-                'Cookie': `session=${sessionCookie}`
-            }
-        });
+        let authData;
+        if (cachedAuth && Date.now() - cachedAuth.timestamp < 30000) { // 30 second cache
+            authData = cachedAuth.data;
+        } else {
+            // Construct the absolute URL for the API call
+            const checkStatusUrl = new URL('/api/auth/check-status', request.url);
 
-        const { isAuthenticated, isProfileComplete, userRole } = await response.json();
+            // Forward the session cookie to the API route
+            const response = await fetch(checkStatusUrl, {
+                headers: {
+                    'Cookie': `session=${sessionCookie}`
+                }
+            });
+
+            authData = await response.json();
+
+            // Cache the result
+            authCache.set(cacheKey, {
+                data: authData,
+                timestamp: Date.now()
+            });
+        }
+
+        const { isAuthenticated, isProfileComplete, userRole } = authData;
 
         // --- Routing Logic Based on Auth and Profile Status ---
 
@@ -67,7 +87,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-// This config remains the same
+// Update config to only protect specific routes
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: [
+        '/dashboard/:path*',
+        '/complete-profile',
+        '/login'
+    ],
 };

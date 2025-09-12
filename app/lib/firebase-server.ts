@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { getMessaging } from 'firebase-admin/messaging';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage'; // 1. Import getStorage
+import { getStorage } from 'firebase-admin/storage';
 
 export function initFirebaseAdminApp(): admin.app.App {
     if (admin.apps.length > 0) {
