@@ -110,54 +110,25 @@ export async function fetchAllEvents(userId: string) {
 }
 
 
+// Replace the fetchPaginatedEvents function in app/lib/data.ts
 
-// In app/lib/data.ts
+const ITEMS_PER_PAGE = 5;
 
-const ITEMS_PER_PAGE = 6;
-
-export async function fetchFilteredPaginatedEvents(
+export async function fetchPaginatedEvents(
     userId: string,
-    filter: string,
     currentPage: number,
+    filter: 'all' | 'ownedByMe' | 'adminOf' = 'all'
 ) {
     noStore();
     try {
-        const baseQuery = adminDb.collectionGroup('events');
-        let query;
+        // Base query to get all events a user is an admin of
+        const allEventsQuery = adminDb.collectionGroup('events')
+            .where('admins', 'array-contains', userId)
+            .orderBy('createdAt', 'desc');
 
-        // A flag to know if we need to filter later
-        let needsManualFilter = false;
-
-        switch (filter) {
-            case 'owner':
-                query = baseQuery.where('ownerUid', '==', userId);
-                break;
-
-            case 'admin':
-                // 1. WE ASK A SIMPLER QUESTION
-                // We REMOVE the unsupported .where('ownerUid', '!=', userId)
-                // This query just gets all events where the user is an admin, including ones they own.
-                // This query IS supported by Firestore and can be indexed.
-                query = baseQuery.where('admins', 'array-contains', userId);
-
-                // 2. We set a flag to manually filter these results in our code later.
-                needsManualFilter = true;
-                break;
-
-            default: // 'all'
-                query = baseQuery.where('admins', 'array-contains', userId);
-                break;
-        }
-
-        // This part of the query is now valid for all cases
-        const fullQuery = query
-            .orderBy('createdAt', 'desc')
-            .limit(ITEMS_PER_PAGE)
-            .offset((currentPage - 1) * ITEMS_PER_PAGE);
-
-        const eventsSnapshot = await fullQuery.get();
-
-        let events = eventsSnapshot.docs.map((doc) => {
+        // Get all events to filter and count
+        const allEventsSnapshot = await allEventsQuery.get();
+        const allEvents = allEventsSnapshot.docs.map((doc) => {
             const data = doc.data();
             return {
                 ...data,
@@ -168,26 +139,60 @@ export async function fetchFilteredPaginatedEvents(
             } as Event;
         });
 
-        // 3. IF it was the 'admin' filter, we now manually remove the events the user owns.
-        if (needsManualFilter) {
-            events = events.filter(event => event.ownerUid !== userId);
+        // Filter events based on the filter parameter
+        let filteredEvents: Event[] = [];
+
+        switch (filter) {
+            case 'all':
+                filteredEvents = allEvents;
+                break;
+            case 'ownedByMe':
+                filteredEvents = allEvents.filter(event => event.ownerUid === userId);
+                break;
+            case 'adminOf':
+                filteredEvents = allEvents.filter(event =>
+                    event.admins.includes(userId) && event.ownerUid !== userId
+                );
+                break;
+            default:
+                filteredEvents = allEvents;
         }
 
-        // To make pagination numbers more accurate, we'll do a separate count.
-        // NOTE: For very large datasets, this is inefficient, but for most apps it's fine.
-        const countQuery = query; // The base query without pagination
-        const countSnapshot = await countQuery.count().get();
-        const totalCount = countSnapshot.data().count;
-        // For the admin filter, the total page count might be slightly off, but it's the best we can do.
+        // Calculate counts for each filter type
+        const counts = {
+            all: allEvents.length,
+            ownedByMe: allEvents.filter(event => event.ownerUid === userId).length,
+            adminOf: allEvents.filter(event =>
+                event.admins.includes(userId) && event.ownerUid !== userId
+            ).length,
+        };
+
+        // Calculate pagination
+        const totalCount = filteredEvents.length;
         const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-        return { events, totalPages };
+        // Get events for current page
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+        return {
+            events: paginatedEvents,
+            totalPages,
+            counts
+        };
 
     } catch (error) {
-        console.error('Database Error fetching filtered events:', error);
-        return { events: [], totalPages: 0 };
+        console.error('Database Error fetching paginated events:', error);
+        return {
+            events: [],
+            totalPages: 0,
+            counts: { all: 0, ownedByMe: 0, adminOf: 0 }
+        };
     }
 }
+
+
 
 
 // Fetches the complete user profile
