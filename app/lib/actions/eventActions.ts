@@ -6,7 +6,7 @@ import { auth as adminAuth } from '@/app/lib/firebase-admin';
 import { adminDb, adminMessaging, adminStorage } from "@/app/lib/firebase-server";
 import { Timestamp, FieldValue, DocumentSnapshot  } from 'firebase-admin/firestore';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag , revalidatePath } from 'next/cache';
 import { Message } from 'firebase-admin/messaging';
 
 
@@ -99,6 +99,7 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
         return { message: "Database error: Failed to create event." };
     }
 
+
     revalidatePath('/dashboard/events');
     redirect('/dashboard/events');
 }
@@ -161,6 +162,7 @@ export async function updateEvent(prevState: UpdateEventState, formData: FormDat
     }
 
     revalidatePath(`/dashboard/events/${shortId}`);
+    revalidatePath('/dashboard/events');
     redirect(`/dashboard/events/${shortId}`);
 }
 

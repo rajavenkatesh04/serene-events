@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { fetchPaginatedEvents } from '@/app/lib/data';
 import { auth } from '@/app/lib/firebase-admin';
 import { EventsListSkeleton } from "@/app/ui/skeletons";
-import Pagination from '@/app/ui/announcements/pagination';
+import Pagination from '@/app/ui/pagination';
 
 type FilterType = 'all' | 'ownedByMe' | 'adminOf';
 
@@ -189,7 +189,7 @@ export default async function Page(props: {
                 </Link>
             </div>
 
-            <Suspense key={`${currentPage}-${activeFilter}`} fallback={<EventsListSkeleton />}>
+            <Suspense fallback={<EventsListSkeleton />}>
                 <EventsList currentPage={currentPage} filter={activeFilter} />
             </Suspense>
         </main>

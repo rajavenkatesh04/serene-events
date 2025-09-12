@@ -119,7 +119,6 @@ export async function fetchPaginatedEvents(
     currentPage: number,
     filter: 'all' | 'ownedByMe' | 'adminOf' = 'all'
 ) {
-    noStore();
     try {
         // Base query to get all events a user is an admin of
         const allEventsQuery = adminDb.collectionGroup('events')
