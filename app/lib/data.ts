@@ -5,6 +5,7 @@ import {User, Event, Invitation, FirestoreTimestamp, Organisation} from '@/app/l
 // Switch to using the ADMIN Firestore instance for all server-side data fetching
 import { adminDb } from './firebase-server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { Announcement } from '@/app/lib/definitions';
 
 // Helper function to safely serialize Firestore Timestamps
 const serializeTimestamp = (timestamp: unknown) => {
@@ -420,5 +421,28 @@ export async function fetchPublicEventByShortId(eventId: string) {
     } catch (error) {
         console.error('Database Error fetching public event by ID:', error);
         return null;
+    }
+}
+
+
+
+
+
+export async function fetchAllAnnouncementsForEvent(eventPath: string): Promise<Announcement[]> {
+    noStore();
+    try {
+        const announcementsSnapshot = await adminDb.collection(`${eventPath}/announcements`).orderBy('createdAt', 'desc').get();
+
+        return announcementsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: serializeTimestamp(data.createdAt),
+            } as Announcement;
+        });
+    } catch (error) {
+        console.error('Database Error fetching all announcements:', error);
+        return [];
     }
 }

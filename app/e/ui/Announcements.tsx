@@ -166,7 +166,7 @@ function AnnouncementMap({ location }: { location: Announcement['location'] }) {
     );
 }
 
-function CompactAnnouncementCard({ announcement, isRecent, isExpanded, onToggleExpanded }: { announcement: Announcement; isRecent: boolean; isExpanded: boolean; onToggleExpanded: () => void; }) {
+export function CompactAnnouncementCard({ announcement, isRecent, isExpanded, onToggleExpanded }: { announcement: Announcement; isRecent: boolean; isExpanded: boolean; onToggleExpanded: () => void; }) {
     const [showNewBadge, setShowNewBadge] = useState(isRecent);
 
     useEffect(() => {

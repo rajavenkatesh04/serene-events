@@ -1,30 +1,37 @@
 import { notFound } from 'next/navigation';
-import { fetchPublicEventByShortId } from '@/app/lib/data';
+import { fetchPublicEventByShortId, fetchAllAnnouncementsForEvent } from '@/app/lib/data';
 import { Toaster } from 'react-hot-toast';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Navbar from '@/app/e/ui/Navbar';
 import EventHeader from '@/app/e/ui/EventHeader';
 import TabNavigation from './TabNavigation';
 import { EventContextProvider } from './context';
+import { ScheduledScreen, PausedScreen, EndedScreen, CancelledScreen } from '@/app/e/ui/StatusScreens';
+import { Announcement } from '@/app/lib/definitions';
 
-// This is an async Server Component (NO 'use client' here).
-export default async function EventLayout({ children, params }: {
+// This is an async Server Component.
+export default async function EventLayout({children, params}: {
     children: React.ReactNode;
     params: Promise<{ id: string }>;
 }) {
     // Await the params before accessing its properties
     const resolvedParams = await params;
 
-    // Fetch the event data once here for the shared header.
     const data = await fetchPublicEventByShortId(resolvedParams.id);
 
     if (!data) {
         notFound();
     }
-    const { initialEvent, eventPath } = data;
+
+    const {initialEvent, eventPath} = data;
+
+    let finalAnnouncements: Announcement[] = [];
+    if (initialEvent.status === 'ended') {
+        // You'll need to create this simple data fetcher in your `data.ts` file.
+        finalAnnouncements = await fetchAllAnnouncementsForEvent(eventPath);
+    }
 
     return (
-        // The context provider wraps everything, making eventPath available to client children.
         <EventContextProvider value={{ eventPath }}>
             <div className="bg-slate-50 text-slate-800 dark:bg-zinc-950 dark:text-slate-200">
                 <Toaster position="top-center" reverseOrder={false} />
@@ -33,12 +40,23 @@ export default async function EventLayout({ children, params }: {
                 <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
                     <EventHeader event={initialEvent} eventId={resolvedParams.id} />
 
-                    {/* The Tab Navigation is now part of the shared layout. */}
-                    <TabNavigation eventId={resolvedParams.id} />
-
-                    <main className="py-6">
-                        {/* {children} will be your page.tsx, chat/page.tsx, etc. */}
-                        {children}
+                    <main className="mt-8">
+                        {/* --- THE FIX: Conditional logic based on event status --- */}
+                        {initialEvent.status === 'live' ? (
+                            <>
+                                {/* If the event is live, show the tabs and the page content */}
+                                <TabNavigation eventId={resolvedParams.id} />
+                                <div className="py-6">{children}</div>
+                            </>
+                        ) : (
+                            <>
+                                {/* Otherwise, show the appropriate status screen */}
+                                {initialEvent.status === 'scheduled' && <ScheduledScreen event={initialEvent} />}
+                                {initialEvent.status === 'paused' && <PausedScreen />}
+                                {initialEvent.status === 'ended' && <EndedScreen announcements={finalAnnouncements} />}
+                                {initialEvent.status === 'cancelled' && <CancelledScreen />}
+                            </>
+                        )}
                     </main>
                 </div>
 
