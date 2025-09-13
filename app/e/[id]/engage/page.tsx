@@ -21,14 +21,9 @@ export default function EngagePage() {
                         A New Way to Engage is Coming
                     </h1>
                     <p className="mt-4 max-w-md text-base text-gray-600 dark:text-zinc-400">
-                        We&apos;re building a powerful suite of tools including live **Chat**, interactive **Polls**, and moderated **Q&A** to make your events more dynamic and connected.
+                        We&apos;re rolling out tools that actually make events fun—live <strong>Chat</strong> that flows,
+                        interactive <strong>Polls</strong> that spark the room, and moderated <strong>Q&amp;A</strong> that keeps the conversation real.
                     </p>
-                    <Link
-                        href="/dashboard"
-                        className="mt-8 inline-flex items-center justify-center rounded-lg bg-rose-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
-                    >
-                        Go Back to Dashboard
-                    </Link>
                 </div>
             </div>
         </main>

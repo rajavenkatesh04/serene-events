@@ -1,28 +1,72 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { fetchPublicEventByShortId } from '@/app/lib/data';
-import EventClientUI from '@/app/e/ui/EventClientUI';
-import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
+'use client';
 
-export default async function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
-    // Await the params before accessing its properties
-    const resolvedParams = await params;
+import { useState, useEffect } from 'react';
+import { db } from '@/app/lib/firebase';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { Announcement } from '@/app/lib/definitions';
+import Announcements from '@/app/e/ui/Announcements';
+import { useEventContext } from './context';
 
-    // Call our function with the resolved id
-    const data = await fetchPublicEventByShortId(resolvedParams.id);
+// Helper to normalize timestamps from Firestore's real-time listener
+function normalizeTimestamp(timestamp: unknown): { seconds: number; nanoseconds: number } {
+    if (!timestamp) return { seconds: 0, nanoseconds: 0 };
 
-    // If the function returns null, Next.js will automatically render your not-found.tsx file.
-    if (!data) {
-        notFound();
+    // Handle Firestore Timestamp objects
+    if (typeof timestamp === 'object' && timestamp !== null) {
+        const ts = timestamp as Record<string, unknown>;
+        if (typeof ts.seconds === 'number') {
+            return {
+                seconds: ts.seconds,
+                nanoseconds: typeof ts.nanoseconds === 'number' ? ts.nanoseconds : 0
+            };
+        }
+        if (typeof ts._seconds === 'number') {
+            return {
+                seconds: ts._seconds,
+                nanoseconds: typeof ts._nanoseconds === 'number' ? ts._nanoseconds : 0
+            };
+        }
     }
 
+    return { seconds: 0, nanoseconds: 0 };
+}
+
+export default function AnnouncementsPage() {
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [isFeedLoading, setIsFeedLoading] = useState(true);
+
+    // Use the context to get the eventPath provided by the server layout
+    const { eventPath } = useEventContext();
+
+    useEffect(() => {
+        if (!eventPath) return;
+
+        // The listener now has the correct, full path from the context!
+        const announcementsQuery = query(collection(db, `${eventPath}/announcements`), orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
+            const announcementsData = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: normalizeTimestamp(data.createdAt),
+                } as Announcement;
+            });
+            setAnnouncements(announcementsData);
+            setIsFeedLoading(false);
+        }, (error) => {
+            console.error("Error fetching announcements in real-time:", error);
+            setIsFeedLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [eventPath]);
+
     return (
-        <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-zinc-950"><LoadingSpinner /><span className="ml-2">Loading Event...</span></div>}>
-            <EventClientUI
-                eventId={resolvedParams.id}
-                initialEvent={data.initialEvent}
-                eventPath={data.eventPath}
-            />
-        </Suspense>
+        <Announcements
+            announcements={announcements}
+            isLoading={isFeedLoading}
+        />
     );
 }

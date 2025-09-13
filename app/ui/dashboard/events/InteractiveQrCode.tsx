@@ -10,7 +10,6 @@ export default function InteractiveQrCode({ eventId }: { eventId: string }) {
     const [copied, setCopied] = useState(false);
     const qrCodeRef = useRef<SVGSVGElement>(null);
 
-    // This now safely accesses window.location.origin only when the component mounts on the client
     const eventUrl = typeof window !== 'undefined' ? `${window.location.origin}/e/${eventId}` : '';
 
     const copyLink = () => {
@@ -29,9 +28,9 @@ export default function InteractiveQrCode({ eventId }: { eventId: string }) {
 
             const img = new Image();
             img.onload = () => {
-                canvas.width = img.width + 32; // Add padding for margin
+                canvas.width = img.width + 32; // Add padding
                 canvas.height = img.height + 32;
-                ctx.fillStyle = "#ffffff"; // Set background to white
+                ctx.fillStyle = "#ffffff"; // White background
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 16, 16); // Draw image with padding
 
@@ -47,7 +46,7 @@ export default function InteractiveQrCode({ eventId }: { eventId: string }) {
 
     return (
         <>
-            {/* The small QR code displayed on the "pass" */}
+            {/* The trigger component on the page remains the same */}
             <div
                 onClick={() => setIsOpen(true)}
                 className="group flex cursor-pointer flex-col items-center transition-transform hover:scale-105"
@@ -58,35 +57,55 @@ export default function InteractiveQrCode({ eventId }: { eventId: string }) {
                 <span className="mt-2 text-xs font-mono tracking-tighter text-gray-500 dark:text-zinc-500 group-hover:text-gray-800 dark:group-hover:text-zinc-300">{eventId}</span>
             </div>
 
-            {/* The modal that pops up */}
+            {/* --- REDESIGNED MODAL --- */}
             <Transition appear show={isOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
                     <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
                     </Transition.Child>
                     <div className="fixed inset-0 overflow-y-auto">
                         <div className="flex min-h-full items-center justify-center p-4 text-center">
                             <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-zinc-900">
-                                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-zinc-100">
-                                        Event QR Code
+
+                                {/* BUG FIX: Added `relative` here to contain the absolutely positioned close button */}
+                                <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-zinc-900/50 p-6 text-left align-middle shadow-2xl ring-1 ring-white/10 backdrop-blur-xl transition-all">
+
+                                    {/* BUG FIX: The close button is now positioned correctly and won't jump */}
+                                    <div className="absolute right-4 top-4">
+                                        <button onClick={() => setIsOpen(false)} className="rounded-full p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white">
+                                            <XMarkIcon className="h-6 w-6" />
+                                        </button>
+                                    </div>
+
+                                    <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-white">
+                                        Share Event
                                     </Dialog.Title>
-                                    <button onClick={() => setIsOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200">
-                                        <XMarkIcon className="h-6 w-6" />
-                                    </button>
-                                    <div className="mt-4 flex flex-col items-center gap-4">
-                                        <div className="rounded-xl bg-white p-4">
-                                            {/* Note: This QR code for the modal uses a ref for downloading */}
-                                            <QRCodeSVG ref={qrCodeRef} value={eventUrl} size={256} />
+
+                                    <div className="mt-6 flex flex-col items-center gap-6">
+                                        {/* Glowing QR Code Display */}
+                                        <div className="relative">
+                                            <div className="absolute inset-[-10px] bg-indigo-500/30 blur-2xl rounded-full"></div>
+                                            <div className="relative rounded-xl bg-white p-4">
+                                                <QRCodeSVG ref={qrCodeRef} value={eventUrl} size={220} />
+                                            </div>
                                         </div>
-                                        <p className="w-full truncate rounded-md bg-gray-100 p-2 text-center font-mono text-sm text-gray-700 dark:bg-zinc-800 dark:text-zinc-300">{eventUrl}</p>
+
+                                        <p className="w-full truncate rounded-md bg-zinc-800/50 p-2 text-center font-mono text-sm text-zinc-300 ring-1 ring-inset ring-white/10">{eventUrl}</p>
+
+                                        {/* Redesigned Buttons */}
                                         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <button onClick={copyLink} className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:ring-offset-zinc-900">
-                                                <LinkIcon className="h-4 w-4" />
+                                            <button
+                                                onClick={copyLink}
+                                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                                            >
+                                                <LinkIcon className="h-5 w-5" />
                                                 <span>{copied ? 'Copied!' : 'Copy Link'}</span>
                                             </button>
-                                            <button onClick={downloadQrCode} className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">
-                                                <ArrowDownTrayIcon className="h-4 w-4" />
+                                            <button
+                                                onClick={downloadQrCode}
+                                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/5 px-4 py-2.5 text-sm font-medium text-zinc-200 ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/10"
+                                            >
+                                                <ArrowDownTrayIcon className="h-5 w-5" />
                                                 Download
                                             </button>
                                         </div>
