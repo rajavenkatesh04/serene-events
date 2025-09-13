@@ -1,5 +1,6 @@
 // app/dashboard/profile/page.tsx
 
+import { Suspense } from "react";
 import { auth } from '@/app/lib/firebase-admin';
 import { fetchUserProfile } from '@/app/lib/data';
 import { redirect } from 'next/navigation';
@@ -8,6 +9,7 @@ import OrganizationCard from '@/app/ui/dashboard/profile/organization-card';
 import DangerZone from '@/app/ui/dashboard/profile/danger-zone';
 import Breadcrumbs from '@/app/ui/dashboard/events/breadcrumbs';
 import ProfileHeader from '@/app/ui/dashboard/profile/profile-header';
+import { ProfileHeaderSkeleton, ProfileFormSkeleton, OrganizationCardSkeleton, DangerZoneSkeleton} from '@/app/ui/skeletons';
 
 export default async function ProfilePage() {
     const session = await auth.getSession();
@@ -41,20 +43,20 @@ export default async function ProfilePage() {
                 ]}
             />
 
-            <ProfileHeader
+            <Suspense fallback={<ProfileHeaderSkeleton />}><ProfileHeader
                 displayName={user.displayName}
                 imageUrl={user.imageUrl}
                 role={user.role}
-            />
+            /></Suspense>
 
             <h1 className="mb-4 mt-2 text-gray-600 dark:text-zinc-400">
                 Manage your profile, organization, and account settings here.
             </h1>
 
             <div className="space-y-8">
-                <ProfileForm user={user} />
-                <OrganizationCard organization={user.organization} />
-                <DangerZone userRole={user.role} />
+                <Suspense fallback={<ProfileFormSkeleton />}><ProfileForm user={user}/></Suspense>
+                <Suspense fallback={<OrganizationCardSkeleton />}><OrganizationCard organization={user.organization}/></Suspense>
+                <Suspense fallback={<DangerZoneSkeleton />}><DangerZone userRole={user.role}/></Suspense>
             </div>
         </main>
     );

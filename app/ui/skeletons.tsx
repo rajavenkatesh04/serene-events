@@ -350,3 +350,87 @@ export function AnnouncementsFeedSkeleton() {
         </div>
     );
 }
+
+// =================================================================================
+// --- PROFILE PAGE SKELETONS (NEW) ---
+// =================================================================================
+
+export function ProfileHeaderSkeleton() {
+    return (
+        <div className={`${shimmer} relative mb-10 overflow-hidden rounded-lg bg-white p-6 shadow-sm dark:bg-zinc-900 md:p-8`}>
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
+                {/* Avatar Skeleton */}
+                <div className="h-24 w-24 flex-shrink-0 rounded-full bg-gray-200 dark:bg-zinc-800" />
+                {/* Text Content Skeleton */}
+                <div className="w-full flex-1 space-y-3">
+                    {/* Heading Skeleton */}
+                    <div className="mx-auto h-8 w-3/4 rounded-md bg-gray-200 dark:bg-zinc-800 sm:mx-0 sm:w-1/2" />
+                    {/* Role Badge Skeleton */}
+                    <div className="mx-auto h-7 w-24 rounded-lg bg-gray-200 dark:bg-zinc-800 sm:mx-0" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+export function ProfileFormSkeleton() {
+    return (
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:p-6">
+            <div className="h-6 w-1/3 rounded-md bg-gray-200 dark:bg-zinc-800" />
+            <div className="mt-4 space-y-4 border-t border-gray-200 pt-4 dark:border-zinc-800">
+                {/* Field 1 */}
+                <div className="space-y-2">
+                    <div className="h-5 w-20 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    <div className="h-9 w-full rounded-md bg-gray-200 dark:bg-zinc-800" />
+                </div>
+                {/* Field 2 */}
+                <div className="space-y-2">
+                    <div className="h-5 w-16 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    <div className="h-9 w-full rounded-md bg-gray-200 dark:bg-zinc-800" />
+                </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+                <div className="h-10 w-24 rounded-lg bg-gray-200 dark:bg-zinc-800" />
+            </div>
+        </div>
+    );
+}
+
+export function OrganizationCardSkeleton() {
+    return (
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:p-6">
+            <div className="h-6 w-1/4 rounded-md bg-gray-200 dark:bg-zinc-800" />
+            <div className="mt-4 space-y-3 border-t border-gray-200 pt-4 dark:border-zinc-800">
+                <div className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    <div className="h-5 w-1/2 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    <div className="h-5 w-1/3 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function DangerZoneSkeleton() {
+    return (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/20">
+            <div className="flex items-center">
+                <div className="mr-2 h-5 w-5 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                <div className="h-6 w-32 rounded-md bg-gray-200 dark:bg-zinc-800" />
+            </div>
+            <div className="mt-4 border-t border-red-200 pt-4 dark:border-red-900/50">
+                <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                    <div className="flex-1 space-y-1">
+                        <div className="h-5 w-24 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                        <div className="h-4 w-full rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    </div>
+                    <div className="h-10 w-full rounded-md bg-gray-200 dark:bg-zinc-800 md:w-36" />
+                </div>
+            </div>
+        </div>
+    );
+}
