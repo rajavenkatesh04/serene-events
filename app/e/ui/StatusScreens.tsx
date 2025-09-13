@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Event, Announcement } from '@/app/lib/definitions';
 import { ClockIcon, PauseIcon, CheckCircleIcon, XCircleIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
-// We are reusing the full-featured announcement card from your Announcements component.
-// NOTE: For this to work, you must export `CompactAnnouncementCard` from your `Announcements.tsx` file.
 import { CompactAnnouncementCard } from '@/app/e/ui/Announcements';
+import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 
-// This is the shared layout for all status screens.
 function StatusScreenLayout({ icon: Icon, title, children }: { icon: React.ElementType, title: string, children: React.ReactNode }) {
     return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300/80 bg-white/50 p-8 text-center dark:border-zinc-800/50 dark:bg-zinc-900/50 sm:p-12">
@@ -20,36 +18,30 @@ function StatusScreenLayout({ icon: Icon, title, children }: { icon: React.Eleme
     );
 }
 
-// --- 1. SCHEDULED SCREEN (with Countdown) ---
+// --- 1. UPGRADED SCHEDULED SCREEN ---
 
 function CountdownDisplay({ targetDate }: { targetDate: Date }) {
     const calculateTimeLeft = () => {
         const difference = +targetDate - +new Date();
-        let timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
-
-        if (difference > 0) {
-            timeLeft = {
-                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((difference / 1000 / 60) % 60),
-                seconds: Math.floor((difference / 1000) % 60),
-            };
-        } else {
-            // If the countdown is over, refresh the page to show the live event
+        if (difference <= 0) {
+            // When the timer finishes, trigger a single refresh.
             if (typeof window !== 'undefined') {
                 window.location.reload();
             }
+            return { days: 0, hours: 0, minutes: 0, seconds: 0 };
         }
-        return timeLeft;
+        return {
+            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((difference / 1000 / 60) % 60),
+            seconds: Math.floor((difference / 1000) % 60),
+        };
     };
 
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft());
-        }, 1000);
-
+        const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
         return () => clearInterval(timer);
     }, [targetDate]);
 
@@ -67,19 +59,23 @@ function CountdownDisplay({ targetDate }: { targetDate: Date }) {
 
 export function ScheduledScreen({ event }: { event: Event }) {
     const startsDate = new Date(event.startsAt.seconds * 1000);
+    const now = new Date();
+    const isPastStartTime = now >= startsDate;
 
+    // --- NEW LOGIC ---
+    // If the start time has passed but the status is still 'scheduled', show the "Delayed" screen.
+    if (isPastStartTime) {
+        return <DelayedScreen />;
+    }
+
+    // Otherwise, show the countdown.
     const calendarLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startsDate.toISOString().replace(/-|:|\.\d\d\d/g,"")}/${new Date(event.endsAt.seconds * 1000).toISOString().replace(/-|:|\.\d\d\d/g,"")}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.locationText)}`;
 
     return (
         <StatusScreenLayout icon={ClockIcon} title="Event Begins Soon">
             <p>This event is scheduled to go live in:</p>
             <CountdownDisplay targetDate={startsDate} />
-            <a
-                href={calendarLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
-            >
+            <a href={calendarLink} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500">
                 <CalendarDaysIcon className="h-5 w-5" />
                 Add to Calendar
             </a>
@@ -87,15 +83,33 @@ export function ScheduledScreen({ event }: { event: Event }) {
     );
 }
 
-// --- 2. PAUSED SCREEN ---
 
-export function PausedScreen() {
-    // This effect will try to reload the page every 30 seconds to check if the event is live again.
+// --- 2. PAUSED & (new) DELAYED SCREENS ---
+
+function DelayedScreen() {
+    // This effect behaves just like the PausedScreen, refreshing to check for updates.
     useEffect(() => {
         const interval = setInterval(() => {
             window.location.reload();
         }, 30000); // 30 seconds
+        return () => clearInterval(interval);
+    }, []);
 
+    return (
+        <StatusScreenLayout icon={ClockIcon} title="Event is Delayed">
+            <div className="flex flex-col items-center">
+                <p className="mt-4">The event was scheduled to start, but seems to be delayed.</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-500">Please hang tight. This page will refresh automatically.</p>
+            </div>
+        </StatusScreenLayout>
+    );
+}
+
+export function PausedScreen() {
+    useEffect(() => {
+        const interval = setInterval(() => {
+            window.location.reload();
+        }, 30000); // 30 seconds
         return () => clearInterval(interval);
     }, []);
 
@@ -107,7 +121,7 @@ export function PausedScreen() {
     );
 }
 
-// --- 3. ENDED SCREEN (with Rich Content) ---
+// --- 3. ENDED SCREEN ---
 
 export function EndedScreen({ announcements }: { announcements: Announcement[] }) {
     const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
@@ -122,7 +136,7 @@ export function EndedScreen({ announcements }: { announcements: Announcement[] }
 
     return (
         <StatusScreenLayout icon={CheckCircleIcon} title="This Event Has Ended">
-            <p className="mb-6">Thank you for attending. You can review the announcements archive from the event below.</p>
+            <p className="mb-6">Thank you for attending. You can review the announcements archive below.</p>
             <div className="mt-4 w-full max-w-2xl text-left border-t border-gray-200 dark:border-zinc-700 pt-6 space-y-4">
                 {announcements.length > 0 ? announcements.map(ann => (
                     <CompactAnnouncementCard
