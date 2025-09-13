@@ -382,3 +382,43 @@ export async function fetchAttendedEvents(userId: string): Promise<Event[]> {
         return [];
     }
 }
+
+
+// ADD THIS NEW FUNCTION AT THE END OF YOUR data.ts FILE
+
+/**
+ * Fetches event data specifically for the public-facing event page (/e/[id]).
+ * It does not require user authentication and serializes all timestamps for client components.
+ * @param eventId The short, user-facing ID of the event.
+ * @returns An object with the serialized event data and its Firestore path, or null if not found.
+ */
+export async function fetchPublicEventByShortId(eventId: string) {
+    noStore();
+    try {
+        const eventSnapshot = await adminDb.collectionGroup('events').where('id', '==', eventId).limit(1).get();
+
+        if (eventSnapshot.empty) {
+            return null;
+        }
+
+        const eventDoc = eventSnapshot.docs[0];
+        const eventData = eventDoc.data();
+        const eventPath = eventDoc.ref.path;
+
+        // Serialize all timestamp fields before returning the data
+        const serializedEvent = {
+            ...eventData,
+            docId: eventDoc.id,
+            // This is the critical part: ensure all timestamps are plain objects
+            createdAt: serializeTimestamp(eventData.createdAt),
+            startsAt: serializeTimestamp(eventData.startsAt),
+            endsAt: serializeTimestamp(eventData.endsAt),
+        } as Event;
+
+        return { initialEvent: serializedEvent, eventPath };
+
+    } catch (error) {
+        console.error('Database Error fetching public event by ID:', error);
+        return null;
+    }
+}
