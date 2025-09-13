@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from 'react-dom';
-import { createEvent, CreateEventState } from '@/app/lib/actions/eventActions';
+import { createEvent, CreateEventState } from '@/app/lib/actions/eventActions'; // Adjust path if needed
 import Link from 'next/link';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 
@@ -29,6 +29,36 @@ export default function CreateEventPage() {
     const initialState: CreateEventState = { message: null, errors: {} };
     const [state, dispatch] = useActionState(createEvent, initialState);
 
+    // --- TIMEZONE FIX START ---
+    // Helper function to convert a datetime-local string to a full ISO 8601 string
+    const convertToISOStringWithOffset = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // getTimezoneOffset returns the difference in minutes between UTC and local time.
+        // It's inverted (e.g., IST is +5:30, but offset is -330), so we negate it.
+        const timezoneOffset = -date.getTimezoneOffset();
+        const offsetHours = String(Math.floor(Math.abs(timezoneOffset) / 60)).padStart(2, '0');
+        const offsetMinutes = String(Math.abs(timezoneOffset) % 60).padStart(2, '0');
+        const offsetSign = timezoneOffset >= 0 ? '+' : '-';
+
+        // Append seconds, milliseconds, and the timezone offset
+        return `${dateString}:00.000${offsetSign}${offsetHours}:${offsetMinutes}`;
+    };
+
+    // This client-side action intercepts the form data before sending it to the server.
+    const clientAction = async (formData: FormData) => {
+        const startsAtLocal = formData.get('startsAt') as string;
+        const endsAtLocal = formData.get('endsAt') as string;
+
+        // Convert and update the form data
+        formData.set('startsAt', convertToISOStringWithOffset(startsAtLocal));
+        formData.set('endsAt', convertToISOStringWithOffset(endsAtLocal));
+
+        // Dispatch the server action with the corrected form data
+        dispatch(formData);
+    };
+    // --- TIMEZONE FIX END ---
+
     return (
         <main>
             <div className="mb-6">
@@ -40,7 +70,8 @@ export default function CreateEventPage() {
                 </p>
             </div>
 
-            <form action={dispatch}>
+            {/* The form now calls our clientAction wrapper */}
+            <form action={clientAction}>
                 {/* --- Main Two-Column Layout --- */}
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
@@ -53,7 +84,7 @@ export default function CreateEventPage() {
                                 <div>
                                     <label htmlFor="title" className="mb-2 block text-sm font-medium">Title</label>
                                     <input id="title" name="title" type="text" placeholder="The name of your event" className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
-                                    {state.errors?.title && <p className="mt-2 text-xs text-red-500">{state.errors.title}</p>}
+                                    {state.errors?.title && <p className="mt-2 text-xs text-red-500">{state.errors.title[0]}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="description" className="mb-2 block text-sm font-medium">Description</label>
@@ -69,18 +100,18 @@ export default function CreateEventPage() {
                                 <div>
                                     <label htmlFor="locationText" className="mb-2 block text-sm font-medium">Location</label>
                                     <input id="locationText" name="locationText" type="text" placeholder="e.g., Main Auditorium, New York" className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
-                                    {state.errors?.locationText && <p className="mt-2 text-xs text-red-500">{state.errors.locationText}</p>}
+                                    {state.errors?.locationText && <p className="mt-2 text-xs text-red-500">{state.errors.locationText[0]}</p>}
                                 </div>
                                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                     <div>
                                         <label htmlFor="startsAt" className="mb-2 block text-sm font-medium">Starts At</label>
                                         <input id="startsAt" name="startsAt" type="datetime-local" className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
-                                        {state.errors?.startsAt && <p className="mt-2 text-xs text-red-500">{state.errors.startsAt}</p>}
+                                        {state.errors?.startsAt && <p className="mt-2 text-xs text-red-500">{state.errors.startsAt[0]}</p>}
                                     </div>
                                     <div>
                                         <label htmlFor="endsAt" className="mb-2 block text-sm font-medium">Ends At</label>
                                         <input id="endsAt" name="endsAt" type="datetime-local" className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
-                                        {state.errors?.endsAt && <p className="mt-2 text-xs text-red-500">{state.errors.endsAt}</p>}
+                                        {state.errors?.endsAt && <p className="mt-2 text-xs text-red-500">{state.errors.endsAt[0]}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -96,12 +127,12 @@ export default function CreateEventPage() {
                                 <div>
                                     <label htmlFor="logoUrl" className="mb-2 block text-sm font-medium">Logo URL</label>
                                     <input id="logoUrl" name="logoUrl" type="url" placeholder="https://..." className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" />
-                                    {state.errors?.logoUrl && <p className="mt-2 text-xs text-red-500">{state.errors.logoUrl}</p>}
+                                    {state.errors?.logoUrl && <p className="mt-2 text-xs text-red-500">{state.errors.logoUrl[0]}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="bannerUrl" className="mb-2 block text-sm font-medium">Banner URL</label>
                                     <input id="bannerUrl" name="bannerUrl" type="url" placeholder="https://..." className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" />
-                                    {state.errors?.bannerUrl && <p className="mt-2 text-xs text-red-500">{state.errors.bannerUrl}</p>}
+                                    {state.errors?.bannerUrl && <p className="mt-2 text-xs text-red-500">{state.errors.bannerUrl[0]}</p>}
                                 </div>
                             </div>
                         </div>
