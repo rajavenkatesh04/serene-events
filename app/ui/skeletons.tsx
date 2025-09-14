@@ -159,20 +159,60 @@ export function EventDetailsPageSkeleton() {
             <div className="h-5 w-1/3 rounded-md bg-gray-200 dark:bg-zinc-800" />
 
             {/* Header */}
-            <div className="mt-8 mb-8">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                        <div className="h-8 w-3/4 rounded-md bg-gray-200 dark:bg-zinc-800" />
-                        <div className="h-4 w-full rounded-md bg-gray-200 dark:bg-zinc-800 md:hidden" />
+            <div className="relative mb-8 mt-4 flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 lg:flex-row">
+                {/* Main Info Section Skeleton */}
+                <div className="flex-grow p-6 sm:p-8">
+                    <div className="flex items-start justify-between">
+                        {/* Status Badge Skeleton */}
+                        <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-zinc-800" />
+                        {/* Location Skeleton (hidden on mobile) */}
+                        <div className="hidden h-5 w-32 rounded-md bg-gray-200 dark:bg-zinc-800 sm:block" />
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="h-9 w-32 rounded-md bg-gray-200 dark:bg-zinc-800" />
-                        <div className="h-9 w-36 rounded-md bg-gray-200 dark:bg-zinc-800" />
-                        <div className="h-9 w-12 rounded-md bg-gray-200 dark:bg-zinc-800" />
-                        <div className="h-9 w-20 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                    <div className="my-6">
+                        {/* Title Skeleton */}
+                        <div className="h-10 w-4/5 rounded-lg bg-gray-200 dark:bg-zinc-800 sm:h-12" />
+                        {/* Description Skeleton */}
+                        <div className="mt-3 space-y-2">
+                            <div className="h-4 w-full rounded-md bg-gray-200 dark:bg-zinc-800" />
+                            <div className="h-4 w-5/6 rounded-md bg-gray-200 dark:bg-zinc-800" />
+                        </div>
+                    </div>
+
+                    {/* Date/Time Section Skeleton */}
+                    <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                        {/* Starts Block Skeleton */}
+                        <div className="flex h-[100px] w-40 flex-col gap-2 rounded-md bg-gray-100 p-3 dark:bg-zinc-800/50">
+                            <div className="h-4 w-12 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                            <div className="h-6 w-3/4 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                            <div className="h-5 w-1/2 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                        </div>
+
+                        {/* Dashed Line Skeleton */}
+                        <div className="h-px w-full flex-1 border-t-2 border-dashed border-gray-200 dark:border-zinc-700 sm:w-auto"></div>
+
+                        {/* Ends Block Skeleton */}
+                        <div className="flex h-[100px] w-40 flex-col gap-2 rounded-md bg-gray-100 p-3 dark:bg-zinc-800/50">
+                            <div className="h-4 w-12 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                            <div className="h-6 w-3/4 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                            <div className="h-5 w-1/2 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                        </div>
                     </div>
                 </div>
-                <div className="hidden md:block mt-2 h-4 w-4/5 rounded-md bg-gray-200 dark:bg-zinc-800" />
+
+                {/* "Stub" Section Skeleton */}
+                <div className="relative flex w-full flex-shrink-0 flex-col border-t-2 border-dashed border-gray-200 bg-gray-50/80 p-6 dark:border-zinc-700 dark:bg-zinc-800/50 lg:w-64 lg:border-l-2 lg:border-t-0">
+                    {/* Subscriber/Admin Count Skeleton */}
+                    <div className="flex justify-around">
+                        <div className="h-5 w-12 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                        <div className="h-5 w-12 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                    </div>
+                    {/* QR Code Skeleton */}
+                    <div className="flex flex-grow items-center justify-center py-6 lg:py-0">
+                        <div className="h-32 w-32 rounded-lg bg-gray-200 dark:bg-zinc-700" />
+                    </div>
+                    {/* Public Page Link Skeleton */}
+                    <div className="mx-auto h-5 w-32 rounded-md bg-gray-200 dark:bg-zinc-700" />
+                </div>
             </div>
 
             {/* Tabs */}

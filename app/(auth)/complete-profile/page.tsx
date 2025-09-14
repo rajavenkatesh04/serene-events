@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, Suspense } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/app/lib/firebase';
@@ -73,7 +73,8 @@ function ProfileFormContent() {
     );
 }
 
-export default function CompleteProfilePage() {
+// Separate component that uses useSearchParams
+function CompleteProfileForm() {
     const initialState: CompleteProfileState | null = null;
     const [state, formAction] = useActionState(completeUserProfile, initialState);
     const router = useRouter();
@@ -100,6 +101,26 @@ export default function CompleteProfilePage() {
     }, [state, router, searchParams]);
 
     return (
+        <form action={formAction} className="space-y-4 pt-4">
+            {/* The form now just wraps our new component */}
+            <ProfileFormContent />
+
+            {/* Display errors below the form */}
+            {state?.errors?.username && state.errors.username.map((error: string) => (
+                <p className="text-center text-xs text-red-600 dark:text-red-500" key={error}>{error}</p>
+            ))}
+            {state?.errors?.organizationName && state.errors.organizationName.map((error: string) => (
+                <p className="text-center text-xs text-red-600 dark:text-red-500" key={error}>{error}</p>
+            ))}
+            {state?.message && state.status === 'error' && (
+                <p className="text-center text-xs text-red-600 dark:text-red-500">{state.message}</p>
+            )}
+        </form>
+    );
+}
+
+export default function CompleteProfilePage() {
+    return (
         <main className="flex min-h-screen items-center justify-center bg-white dark:bg-zinc-950">
             <div className="relative mx-auto flex w-full max-w-sm flex-col space-y-4 p-4">
                 <div className="text-center">
@@ -107,21 +128,9 @@ export default function CompleteProfilePage() {
                     <p className="mt-1 text-gray-500 dark:text-zinc-400">Choose a username and a name for your workspace.</p>
                 </div>
 
-                <form action={formAction} className="space-y-4 pt-4">
-                    {/* The form now just wraps our new component */}
-                    <ProfileFormContent />
-
-                    {/* Display errors below the form */}
-                    {state?.errors?.username && state.errors.username.map((error: string) => (
-                        <p className="text-center text-xs text-red-600 dark:text-red-500" key={error}>{error}</p>
-                    ))}
-                    {state?.errors?.organizationName && state.errors.organizationName.map((error: string) => (
-                        <p className="text-center text-xs text-red-600 dark:text-red-500" key={error}>{error}</p>
-                    ))}
-                    {state?.message && state.status === 'error' && (
-                        <p className="text-center text-xs text-red-600 dark:text-red-500">{state.message}</p>
-                    )}
-                </form>
+                <Suspense fallback={<LoadingSpinner />}>
+                    <CompleteProfileForm />
+                </Suspense>
             </div>
         </main>
     );

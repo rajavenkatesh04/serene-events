@@ -48,7 +48,7 @@ function ChatMessage({ message }: { message: Message }) {
 
 // --- NEW: A more explicit login prompt ---
 function LoginPromptBar({ eventId }: { eventId: string }) {
-    const redirectUrl = encodeURIComponent(`/e/${eventId}?tab=chat`);
+    const redirectUrl = encodeURIComponent(`/e/${eventId}/chat`);
     return (
         <div className="flex items-center justify-between gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-sm">
             <p className="text-sm font-medium text-zinc-300">You are viewing as a guest.</p>

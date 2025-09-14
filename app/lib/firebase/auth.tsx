@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/app/lib/firebase';
-import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
+import InitialLoader from '@/app/ui/InitialLoader';
 
 // 1. Define the shape of the data that the context will provide
 type AuthContextType = {
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white dark:bg-zinc-950">
-                <LoadingSpinner />
+                <InitialLoader />
             </div>
         );
     }
