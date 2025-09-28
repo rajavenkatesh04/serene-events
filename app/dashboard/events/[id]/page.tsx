@@ -98,7 +98,7 @@ async function EventDetails({ params, searchParams }: PageProps) {
                     )}
                     {activeTab === 'admins' && (
                         <Suspense fallback={<AdminsTabSkeleton />}>
-                            {(async () => {
+                            {await (async () => {
                                 const sentInvites = await fetchEventInvitations(event.docId);
                                 return (
                                     <AdminsTab
