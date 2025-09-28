@@ -53,7 +53,7 @@ export default async function LoginPage({
                 <div className="text-center">
                     <Link href="/" className="inline-block">
                         <span className="bg-gradient-to-r from-rose-500 to-rose-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
-                            Luna
+                            Serene
                         </span>
                     </Link>
                 </div>

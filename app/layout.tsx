@@ -13,11 +13,11 @@ const calSans = Cal_Sans({
 
 export const metadata: Metadata = {
     title: {
-        template: '%s | Luna',
-        default: 'Luna',
+        template: '%s | Serene',
+        default: 'Serene',
     },
     description: 'The better platform to spice up your events',
-    metadataBase: new URL('https://luna-83jo.vercel.app/'),
+    metadataBase: new URL('https://serene-events.vercel.app/login'),
     manifest: "/manifest.webmanifest",
     icons: {
         icon: '/icons/favicon-32x32.png',
