@@ -19,22 +19,6 @@ export const metadata: Metadata = {
     description: 'The better platform to spice up your events',
     metadataBase: new URL('https://serene-events.vercel.app/login'),
     manifest: "/manifest.webmanifest",
-    icons: {
-        icon: '/icons/favicon-32x32.png',
-        shortcut: '/favicon.ico',
-        apple: '/icons/apple-touch-icon.png',
-        other: [
-            {
-                rel: 'icon',
-                url: '/icons/favicon-16x16.png',
-                sizes: '16x16'
-            },
-            {
-                rel: 'msapplication-config',
-                url: '/browserconfig.xml' // Points to the root of public/
-            }
-        ],
-    },
 };
 
 export default function RootLayout({

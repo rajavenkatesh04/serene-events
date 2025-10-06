@@ -1,10 +1,13 @@
+'use client';
+
 import { Event } from '@/app/lib/definitions';
 import { MapPinIcon, UsersIcon, UserCircleIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import InteractiveQrCode from './InteractiveQrCode'; // Assuming InteractiveQrCode.tsx is in the same folder
-import StatusBadge from './StatusBadge'; // Assuming StatusBadge.tsx is in the same folder
+import InteractiveQrCode from './InteractiveQrCode';
+import StatusBadge from './StatusBadge';
 
-// --- REDESIGNED DateTimeBlock for better readability ---
+// This component is well-designed. By making the parent a client component,
+// this logic will now run in the browser and display the correct local time.
 function DateTimeBlock({ label, date }: { label: string; date: Date }) {
     // Format the date part (e.g., "11 Aug 2025")
     const displayDate = date.toLocaleDateString(undefined, {
@@ -20,8 +23,7 @@ function DateTimeBlock({ label, date }: { label: string; date: Date }) {
         hour12: true,
     });
 
-    // This is the magic: we robustly extract the FULL timezone name
-    // e.g., "India Standard Time" instead of "GMT+5:30"
+    // Robustly extract the FULL timezone name (e.g., "India Standard Time")
     const timeZoneName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' })
         .formatToParts(date)
         .find(part => part.type === 'timeZoneName')
@@ -33,11 +35,9 @@ function DateTimeBlock({ label, date }: { label: string; date: Date }) {
             <p className="text-xl font-bold text-gray-900 dark:text-zinc-100">
                 {displayDate}
             </p>
-            {/* The main time is now larger and more prominent */}
             <p className="mt-1 text-2xl font-medium text-blue-600 dark:text-blue-400 leading-tight">
                 {displayTime}
             </p>
-            {/* The full timezone name is smaller and acts as helpful context */}
             {timeZoneName && (
                 <p className="text-xs text-gray-400 dark:text-zinc-500">
                     {timeZoneName}
@@ -55,6 +55,8 @@ type EventHeaderProps = {
 }
 
 export default function EventHeader({ event, subscriberCount, adminCount }: EventHeaderProps) {
+    // Because this is now a Client Component, this logic runs in the user's browser,
+    // guaranteeing the correct local timezone is used for conversion.
     const startsDate = new Date(event.startsAt.seconds * 1000);
     const endsDate = new Date(event.endsAt.seconds * 1000);
 
