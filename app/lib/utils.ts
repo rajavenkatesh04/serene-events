@@ -93,3 +93,40 @@ export function formatRelativeDate(timestamp: { seconds: number; nanoseconds: nu
         return dateFormatter.format(date);
     }
 }
+
+
+
+/**
+ * Formats a start and end timestamp into a user-friendly, timezone-aware string.
+ * @param startsAt The event's start timestamp.
+ * @param endsAt The event's end timestamp.
+ * @returns A formatted string like "Oct 7, 9:00 AM - 5:00 PM PDT".
+ */
+export function formatEventTimeRange(
+    startsAt: FirestoreTimestamp | null | undefined,
+    endsAt: FirestoreTimestamp | null | undefined
+): string {
+    if (!startsAt || !endsAt) return 'Time not specified';
+
+    const startDate = new Date(startsAt.seconds * 1000);
+    const endDate = new Date(endsAt.seconds * 1000);
+
+    const options: Intl.DateTimeFormatOptions = {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short', // Crucial for showing timezone context e.g., PST, EDT
+    };
+
+    // Check if the event is on the same day in the user's local timezone
+    const isSameDay = startDate.toLocaleDateString() === endDate.toLocaleDateString();
+
+    if (isSameDay) {
+        // e.g., "Oct 7, 9:00 AM - 5:00 PM PDT"
+        return `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${startDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} - ${endDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}`;
+    } else {
+        // e.g., "Oct 6, 10:00 PM PDT - Oct 7, 6:00 AM PDT"
+        return `${startDate.toLocaleString(undefined, options)} - ${endDate.toLocaleString(undefined, options)}`;
+    }
+}

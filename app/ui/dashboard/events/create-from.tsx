@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from 'react-dom';
-import { createEvent, CreateEventState } from '@/app/lib/actions/eventActions'; // Adjust path if needed
+import { createEvent, CreateEventState } from '@/app/lib/actions/eventActions';
 import Link from 'next/link';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 
@@ -29,35 +29,27 @@ export default function CreateEventPage() {
     const initialState: CreateEventState = { message: null, errors: {} };
     const [state, dispatch] = useActionState(createEvent, initialState);
 
-    // --- TIMEZONE FIX START ---
-    // Helper function to convert a datetime-local string to a full ISO 8601 string
-    const convertToISOStringWithOffset = (dateString: string) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        // getTimezoneOffset returns the difference in minutes between UTC and local time.
-        // It's inverted (e.g., IST is +5:30, but offset is -330), so we negate it.
-        const timezoneOffset = -date.getTimezoneOffset();
-        const offsetHours = String(Math.floor(Math.abs(timezoneOffset) / 60)).padStart(2, '0');
-        const offsetMinutes = String(Math.abs(timezoneOffset) % 60).padStart(2, '0');
-        const offsetSign = timezoneOffset >= 0 ? '+' : '-';
-
-        // Append seconds, milliseconds, and the timezone offset
-        return `${dateString}:00.000${offsetSign}${offsetHours}:${offsetMinutes}`;
-    };
-
+    // --- CORRECTED TIMEZONE FIX ---
     // This client-side action intercepts the form data before sending it to the server.
     const clientAction = async (formData: FormData) => {
         const startsAtLocal = formData.get('startsAt') as string;
         const endsAtLocal = formData.get('endsAt') as string;
 
-        // Convert and update the form data
-        formData.set('startsAt', convertToISOStringWithOffset(startsAtLocal));
-        formData.set('endsAt', convertToISOStringWithOffset(endsAtLocal));
+        // The 'datetime-local' input gives a string like "2025-10-06T18:58".
+        // new Date() correctly interprets this as the user's local time in the browser.
+        // .toISOString() reliably converts it to a full UTC string (e.g., "2025-10-06T13:28:00.000Z").
+        // Your server action's z.coerce.date() will now parse this unambiguous UTC string perfectly.
+        if (startsAtLocal) {
+            formData.set('startsAt', new Date(startsAtLocal).toISOString());
+        }
+        if (endsAtLocal) {
+            formData.set('endsAt', new Date(endsAtLocal).toISOString());
+        }
 
-        // Dispatch the server action with the corrected form data
+        // Dispatch the original server action with the corrected, timezone-aware form data
         dispatch(formData);
     };
-    // --- TIMEZONE FIX END ---
+    // --- END TIMEZONE FIX ---
 
     return (
         <main>
@@ -70,7 +62,7 @@ export default function CreateEventPage() {
                 </p>
             </div>
 
-            {/* The form now calls our clientAction wrapper */}
+            {/* The form now correctly calls our clientAction wrapper */}
             <form action={clientAction}>
                 {/* --- Main Two-Column Layout --- */}
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

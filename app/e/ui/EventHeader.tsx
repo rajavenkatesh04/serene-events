@@ -1,36 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Event } from '@/app/lib/definitions';
-import { MapPinIcon, ChevronDownIcon, ChevronUpIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon } from '@heroicons/react/24/outline';
 import StatusBadge from './StatusBadge';
 import InteractiveQrCode from '@/app/ui/dashboard/events/InteractiveQrCode';
 import NotificationButton from '@/app/ui/NotificationButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// This component presents the full date and time with corrected colors for light/dark modes.
-function DateTimeBlock({ label, date }: { label: string; date: Date }) {
-    const fullDate = date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const timeOnly = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZoneName: 'long' });
+// --- HELPER FUNCTION to calculate human-readable duration ---
+function getEventDuration(start: Date, end: Date): string {
+    const durationMs = end.getTime() - start.getTime();
+    const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
+    const hours = Math.floor((durationMs / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
 
+    if (days > 1) return `A ${days}-day event`;
+    if (days === 1) return `A 1-day event`;
+    if (hours > 0) return `Lasts ${hours}h ${minutes > 0 ? `${minutes}m` : ''}`.trim();
+    if (minutes > 0) return `Lasts ${minutes} minutes`;
+    return '';
+}
+
+// --- NEW, SMARTER COMPONENT for displaying date and time ---
+function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date, endsAt: Date }) {
+    const isSameDay = startsAt.toLocaleDateString() === endsAt.toLocaleDateString();
+    const duration = getEventDuration(startsAt, endsAt);
+
+    const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'short' };
+
+    const timeZoneName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' }).formatToParts(startsAt).find(part => part.type === 'timeZoneName')?.value;
+
+    if (isSameDay) {
+        return (
+            <div className="text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleDateString(undefined, dateOptions)}</p>
+                <p className="mt-2 text-2xl font-medium text-blue-600 dark:text-blue-400">
+                    {`${startsAt.toLocaleTimeString(undefined, timeOptions)} - ${endsAt.toLocaleTimeString(undefined, timeOptions)}`}
+                </p>
+                <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
+                    <ClockIcon className="h-4 w-4" />
+                    <span>{duration}</span>
+                    <span className="font-semibold text-gray-400 dark:text-zinc-600">•</span>
+                    <span>{timeZoneName}</span>
+                </div>
+            </div>
+        );
+    }
+
+    // For multi-day events
     return (
-        <div className="text-center sm:text-left">
-            {/* --- COLOR FIX --- */}
-            <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">{label}</p>
-            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{timeOnly}</p>
-            <p className="text-xs text-gray-500 dark:text-zinc-400">{fullDate}</p>
+        <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="text-center sm:text-left">
+                <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Starts</p>
+                <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleString(undefined, fullOptions)}</p>
+            </div>
+            <div className="text-center sm:text-right">
+                <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Ends</p>
+                <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{endsAt.toLocaleString(undefined, fullOptions)}</p>
+            </div>
         </div>
     );
 }
 
 export default function EventHeader({ event, eventId }: { event: Event, eventId: string }) {
-    const [isExpanded, setIsExpanded] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
+    const [isExpanded, setIsExpanded] = useState(true); // Default to expanded on initial render
+
+    // On the client, check window width to decide if it should be collapsed on mobile
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            setIsExpanded(false);
+        }
+    }, []);
+
     const startsDate = new Date(event.startsAt.seconds * 1000);
     const endsDate = new Date(event.endsAt.seconds * 1000);
 
     return (
         <div className="mb-12 rounded-2xl bg-white ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-            {/* --- Part 1: The Ultra-Minimalist "Cover" --- */}
             <div className="p-6">
                 <div className="flex items-start justify-between gap-4">
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100 sm:text-4xl">{event.title}</h1>
@@ -42,15 +91,14 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                 </div>
             </div>
 
-            {/* --- Part 2: The "Unfolding" Content --- */}
             <AnimatePresence>
                 {isExpanded && (
                     <motion.div
                         key="details"
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.4, ease: 'easeInOut' }}
+                        animate={{ height: 'auto', opacity: 1, transition: { duration: 0.4, ease: 'easeInOut' } }}
+                        exit={{ height: 0, opacity: 0, transition: { duration: 0.3, ease: 'easeInOut' } }}
+                        className="overflow-hidden"
                     >
                         <div className="border-t border-gray-200 dark:border-zinc-800 p-6 sm:p-8">
                             <div>
@@ -60,22 +108,11 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                                     <NotificationButton eventId={eventId} />
                                 </div>
                             </div>
-
-                            {/* --- LAYOUT FIX: Re-introduced the horizontal time display --- */}
                             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-zinc-800">
-                                <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                                    <DateTimeBlock label="Starts" date={startsDate} />
-                                    <div className="w-full flex-1 items-center gap-2 sm:flex">
-                                        <div className="h-px w-full flex-1 border-t-2 border-dashed border-gray-200 dark:border-zinc-700"></div>
-                                        <CalendarIcon className="hidden h-6 w-6 text-gray-300 dark:text-zinc-600 sm:block" />
-                                        <div className="h-px w-full flex-1 border-t-2 border-dashed border-gray-200 dark:border-zinc-700"></div>
-                                    </div>
-                                    <DateTimeBlock label="Ends" date={endsDate} />
-                                </div>
+                                {/* The new, smarter component is used here */}
+                                <DateTimeDisplay startsAt={startsDate} endsAt={endsDate} />
                             </div>
-
                         </div>
-                        {/* --- "Stub" Section for QR Code --- */}
                         <div className="relative border-t-2 border-dashed border-gray-200 bg-gray-50/50 p-6 dark:border-zinc-700 dark:bg-zinc-800/20">
                             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
                                 <div className="flex-shrink-0">
@@ -91,7 +128,6 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                 )}
             </AnimatePresence>
 
-            {/* --- The Toggle Button (hidden on desktop) --- */}
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 aria-expanded={isExpanded}
