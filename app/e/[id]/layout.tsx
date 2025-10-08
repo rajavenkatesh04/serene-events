@@ -66,7 +66,7 @@ export default async function EventLayout({children, params}: {
                         <div className="mx-auto flex max-w-6xl items-center justify-center px-6 text-sm text-gray-500 dark:text-zinc-500">
                             <a href="https://luna-83jo.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                                 <SparklesIcon className="h-4 w-4 text-indigo-500" />
-                                <span>Powered by <span className="font-medium text-gray-700 dark:text-zinc-300">Luna</span></span>
+                                <span>Powered by <span className="font-medium text-gray-700 dark:text-zinc-300">Serene</span></span>
                             </a>
                         </div>
                     </footer>

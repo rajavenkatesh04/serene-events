@@ -13,7 +13,7 @@ const SessionExpiredMessage = () => (
 
 const customMessages: { [key: string]: { title: string; subtitle: string } } = {
     default: {
-        title: "Welcome to Luna",
+        title: "Welcome to Serene Events",
         subtitle: "Sign in to access your account and manage your events."
     },
     chat: {
@@ -40,7 +40,7 @@ export default async function LoginPage({
     if (isSessionExpired) {
         message = {
             title: "Session Expired",
-            subtitle: "Please sign in again to continue using Luna."
+            subtitle: "Please sign in again to continue using Serene Events."
         };
     } else {
         message = customMessages[reason] || customMessages.default;

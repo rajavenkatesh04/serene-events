@@ -12,7 +12,8 @@ export default function Navbar() {
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 p-4 text-gray-900 dark:text-zinc-100">
                 <div className="flex-shrink-0">
                     <Link href="/">
-                        <LunaLogo />
+                        <Image src="/srm-logo.svg" alt="SRM Logo" width={100} height={32} className="h-8 w-auto"/>
+                        {/*<LunaLogo />*/}
                         {/*<Image*/}
                         {/*    */}
                         {/*    src="/luna-logo.png"*/}
