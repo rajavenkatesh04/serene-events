@@ -6,6 +6,7 @@ import {User, Event, Invitation, FirestoreTimestamp, Organisation} from '@/app/l
 import { adminDb } from './firebase-server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Announcement } from '@/app/lib/definitions';
+import { FeedbackSummary, FeedbackResponse } from './definitions';
 
 // Helper function to safely serialize Firestore Timestamps
 const serializeTimestamp = (timestamp: unknown) => {
@@ -443,6 +444,53 @@ export async function fetchAllAnnouncementsForEvent(eventPath: string): Promise<
         });
     } catch (error) {
         console.error('Database Error fetching all announcements:', error);
+        return [];
+    }
+}
+
+
+
+
+
+
+export async function fetchEventFeedbackSummary(userId: string, eventId: string): Promise<FeedbackSummary | null> {
+    noStore();
+    try {
+        const event = await fetchEventById(userId, eventId);
+        if (!event) return null;
+
+        // The feedbackSummary is already on the event object
+        return event.feedbackSummary || null;
+
+    } catch (error) {
+        console.error('Database Error fetching feedback summary:', error);
+        return null;
+    }
+}
+
+export async function fetchRecentFeedback(userId: string, eventId: string, limitCount: number = 5): Promise<FeedbackResponse[]> {
+    noStore();
+    try {
+        const event = await fetchEventById(userId, eventId);
+        if (!event || !event.organizationId) return [];
+
+        const feedbackPath = `organizations/${event.organizationId}/events/${event.docId}/feedback`;
+        const feedbackSnapshot = await adminDb.collection(feedbackPath)
+            .orderBy('submittedAt', 'desc')
+            .limit(limitCount)
+            .get();
+
+        return feedbackSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                fullName: data.fullName,
+                comments: data.comments,
+                submittedAt: serializeTimestamp(data.submittedAt) as FirestoreTimestamp,
+            };
+        });
+    } catch (error) {
+        console.error('Database Error fetching recent feedback:', error);
         return [];
     }
 }

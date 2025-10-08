@@ -36,6 +36,7 @@ export type Event = {
     locationText: string;
     logoUrl?: string;
     bannerUrl?: string;
+    feedbackSummary?: FeedbackSummary;
 };
 
 type GeoPoint = {
@@ -125,3 +126,28 @@ export interface Message {
     text: string;
     timestamp: FirestoreTimestamp;
 }
+
+
+// Add these new types to your definitions.ts file
+
+export type FeedbackRatingCounts = {
+    Excellent: number;
+    Good: number;
+    Average: number;
+    Poor: number;
+};
+
+export type FeedbackSummary = {
+    totalResponses: number;
+    registrationRating: FeedbackRatingCounts;
+    communicationRating: FeedbackRatingCounts;
+    venueRating: FeedbackRatingCounts;
+    pacingRating: FeedbackRatingCounts;
+};
+
+export type FeedbackResponse = {
+    id: string;
+    fullName: string;
+    comments?: string;
+    submittedAt: FirestoreTimestamp;
+};
