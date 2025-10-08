@@ -67,7 +67,7 @@ function ProfileFormContent() {
                         <LoadingSpinner className="mr-2" />
                         <span>Please wait...</span>
                     </>
-                ) : 'Continue to Dashboard'}
+                ) : 'Continue'}
             </button>
         </fieldset>
     );

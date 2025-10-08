@@ -6,7 +6,7 @@ export default function TermsOfServicePage() {
             <div className="mx-auto max-w-3xl">
                 <div className="rounded-md border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-8">
                     <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-zinc-100">
-                        Terms of Service for Luna
+                        Terms of Service for Serene Events
                     </h1>
 
                     <p className="mb-4 text-sm text-gray-500 dark:text-zinc-400">
@@ -17,7 +17,7 @@ export default function TermsOfServicePage() {
                         <section>
                             <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">1. Agreement to Terms</h2>
                             <p>
-                                By creating an account or using the Luna application (&quot;Service&quot;), you agree to be bound by these Terms of Service. If you disagree with any part of the terms, then you do not have permission to access the Service.
+                                By creating an account or using the Serene application (&quot;Service&quot;), you agree to be bound by these Terms of Service. If you disagree with any part of the terms, then you do not have permission to access the Service.
                             </p>
                         </section>
 

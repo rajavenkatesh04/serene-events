@@ -1,6 +1,5 @@
 "use client"
 
-import ToggleSwitch from "@/app/ui/themes/ToggleSwitch";
 import Link from "next/link";
 import {useState} from "react";
 

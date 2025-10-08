@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import LunaLogo from "@/app/ui/luna-logo";
 
 // This Navbar is now simpler and only responsible for branding.
 // The search bar has been moved into the Announcements component where it's actually used.

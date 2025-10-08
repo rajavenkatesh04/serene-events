@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
             <div className="mx-auto max-w-3xl">
                 <div className="rounded-md border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-8">
                     <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-zinc-100">
-                        Privacy Policy for Luna
+                        Privacy Policy for Serene Events
                     </h1>
 
                     {/* // UPDATED DATE */}
@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
                         <section>
                             <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-zinc-200">1. Introduction</h2>
                             <p>
-                                Welcome to Luna (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application to manage event communications. By using Luna, you agree to the collection and use of information in accordance with this policy.
+                                Welcome to Serene Events (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application to manage event communications. By using Serene, you agree to the collection and use of information in accordance with this policy.
                             </p>
                         </section>
 

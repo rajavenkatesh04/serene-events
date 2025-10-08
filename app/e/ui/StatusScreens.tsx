@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Event, Announcement } from '@/app/lib/definitions';
 import { ClockIcon, PauseIcon, CheckCircleIcon, XCircleIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { CompactAnnouncementCard } from '@/app/e/ui/Announcements';
-import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 
 // --- UPDATED LAYOUT WITH ACCENT COLORS ---
 

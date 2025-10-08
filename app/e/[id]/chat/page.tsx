@@ -7,7 +7,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import { Message } from '@/app/lib/definitions';
 import { sendMessage } from '@/app/lib/actions/chatActions';
-import { PaperAirplaneIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/solid';
+import { PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { formatRelativeDate } from '@/app/lib/utils';
 import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 import Link from 'next/link';
