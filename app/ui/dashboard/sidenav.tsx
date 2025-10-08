@@ -4,6 +4,7 @@ import NavLinks from "@/app/ui/dashboard/nav-links";
 import { auth } from '@/app/lib/firebase-admin';
 import { fetchUserProfile, fetchPendingInvites  } from '@/app/lib/data';
 import UserProfile from './user-profile';
+import SereneLogo from "@/app/ui/serene-logo";
 
 export default async function SideNav() {
     const session = await auth.getSession();
@@ -27,7 +28,7 @@ export default async function SideNav() {
                 href="/"
             >
                 <div className="w-32 text-white md:w-40">
-                    <LunaLogo />
+                    <SereneLogo />
                 </div>
             </Link>
 

@@ -8,7 +8,7 @@ import InteractiveQrCode from '@/app/ui/dashboard/events/InteractiveQrCode';
 import NotificationButton from '@/app/ui/NotificationButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- HELPER FUNCTION to calculate human-readable duration (Unchanged) ---
+// --- HELPER FUNCTION (Unchanged) ---
 function getEventDuration(start: Date, end: Date): string {
     const durationMs = end.getTime() - start.getTime();
     const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
@@ -22,9 +22,8 @@ function getEventDuration(start: Date, end: Date): string {
     return '';
 }
 
-// --- ✨ REBUILT: Smarter component for displaying date and time ---
+// --- DateTimeDisplay Component (Unchanged) ---
 function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: Date | null }) {
-    // --- Case 1: Both start and end dates are present ---
     if (startsAt && endsAt) {
         const isSameDay = startsAt.toLocaleDateString() === endsAt.toLocaleDateString();
         const duration = getEventDuration(startsAt, endsAt);
@@ -48,7 +47,6 @@ function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: 
                 </div>
             );
         }
-        // Multi-day event logic
         const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'short' };
         return (
             <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
@@ -63,8 +61,6 @@ function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: 
             </div>
         );
     }
-
-    // --- Case 2: Only start date is present ---
     if (startsAt) {
         const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
         const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -77,8 +73,6 @@ function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: 
             </div>
         );
     }
-
-    // --- Case 3: Neither date is present (or only end date, which is unlikely) ---
     return (
         <div className="text-center text-base text-gray-500 dark:text-zinc-400">
             <p>Date & Time to be announced</p>
@@ -95,24 +89,33 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
         }
     }, []);
 
-    // ✨ MODIFIED: Safely create Date objects, allowing them to be null if the data is missing.
     const startsDate = event.startsAt ? new Date(event.startsAt.seconds * 1000) : null;
     const endsDate = event.endsAt ? new Date(event.endsAt.seconds * 1000) : null;
 
     return (
         <div className="mb-12 rounded-2xl bg-white ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
             <div className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100 sm:text-4xl">{event.title}</h1>
-                    <StatusBadge status={event.status} />
+                {/* ✨ FIX 1: Improved layout for title and status badge */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100 sm:text-4xl">
+                        {event.title}
+                    </h1>
+                    <div className="mt-3 sm:mt-0 flex-shrink-0">
+                        <StatusBadge status={event.status} />
+                    </div>
                 </div>
-                {/* Only show location if it exists */}
+
                 {event.locationText && (
                     <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400">
                         <MapPinIcon className="h-4 w-4" />
                         <span>{event.locationText}</span>
                     </div>
                 )}
+
+                {/* ✨ FIX 2: Notification button moved here to be always visible */}
+                <div className="mt-6">
+                    <NotificationButton eventId={eventId} />
+                </div>
             </div>
 
             <AnimatePresence>
@@ -128,12 +131,9 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                             <div>
                                 <h2 className="text-sm font-semibold text-gray-500 dark:text-zinc-400">About this Event</h2>
                                 <p className="mt-2 text-base text-gray-700 dark:text-zinc-300">{event.description || 'No description provided.'}</p>
-                                <div className="mt-6">
-                                    <NotificationButton eventId={eventId} />
-                                </div>
+                                {/* The notification button was moved from here */}
                             </div>
                             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-zinc-800">
-                                {/* The new, smarter component is used here */}
                                 <DateTimeDisplay startsAt={startsDate} endsAt={endsDate} />
                             </div>
                         </div>
