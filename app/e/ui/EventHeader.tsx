@@ -8,7 +8,7 @@ import InteractiveQrCode from '@/app/ui/dashboard/events/InteractiveQrCode';
 import NotificationButton from '@/app/ui/NotificationButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- HELPER FUNCTION to calculate human-readable duration ---
+// --- HELPER FUNCTION to calculate human-readable duration (Unchanged) ---
 function getEventDuration(start: Date, end: Date): string {
     const durationMs = end.getTime() - start.getTime();
     const minutes = Math.floor((durationMs / (1000 * 60)) % 60);
@@ -22,61 +22,82 @@ function getEventDuration(start: Date, end: Date): string {
     return '';
 }
 
-// --- NEW, SMARTER COMPONENT for displaying date and time ---
-function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date, endsAt: Date }) {
-    const isSameDay = startsAt.toLocaleDateString() === endsAt.toLocaleDateString();
-    const duration = getEventDuration(startsAt, endsAt);
+// --- ✨ REBUILT: Smarter component for displaying date and time ---
+function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: Date | null }) {
+    // --- Case 1: Both start and end dates are present ---
+    if (startsAt && endsAt) {
+        const isSameDay = startsAt.toLocaleDateString() === endsAt.toLocaleDateString();
+        const duration = getEventDuration(startsAt, endsAt);
+        const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeZoneName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' }).formatToParts(startsAt).find(part => part.type === 'timeZoneName')?.value;
 
-    const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'short' };
-
-    const timeZoneName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' }).formatToParts(startsAt).find(part => part.type === 'timeZoneName')?.value;
-
-    if (isSameDay) {
+        if (isSameDay) {
+            return (
+                <div className="text-center">
+                    <p className="text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleDateString(undefined, dateOptions)}</p>
+                    <p className="mt-2 text-2xl font-medium text-blue-600 dark:text-blue-400">
+                        {`${startsAt.toLocaleTimeString(undefined, timeOptions)} - ${endsAt.toLocaleTimeString(undefined, timeOptions)}`}
+                    </p>
+                    <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
+                        <ClockIcon className="h-4 w-4" />
+                        <span>{duration}</span>
+                        <span className="font-semibold text-gray-400 dark:text-zinc-600">•</span>
+                        <span>{timeZoneName}</span>
+                    </div>
+                </div>
+            );
+        }
+        // Multi-day event logic
+        const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'short' };
         return (
-            <div className="text-center">
-                <p className="text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleDateString(undefined, dateOptions)}</p>
-                <p className="mt-2 text-2xl font-medium text-blue-600 dark:text-blue-400">
-                    {`${startsAt.toLocaleTimeString(undefined, timeOptions)} - ${endsAt.toLocaleTimeString(undefined, timeOptions)}`}
-                </p>
-                <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
-                    <ClockIcon className="h-4 w-4" />
-                    <span>{duration}</span>
-                    <span className="font-semibold text-gray-400 dark:text-zinc-600">•</span>
-                    <span>{timeZoneName}</span>
+            <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
+                <div className="text-center sm:text-left">
+                    <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Starts</p>
+                    <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleString(undefined, fullOptions)}</p>
+                </div>
+                <div className="text-center sm:text-right">
+                    <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Ends</p>
+                    <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{endsAt.toLocaleString(undefined, fullOptions)}</p>
                 </div>
             </div>
         );
     }
 
-    // For multi-day events
+    // --- Case 2: Only start date is present ---
+    if (startsAt) {
+        const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return (
+            <div className="text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleDateString(undefined, dateOptions)}</p>
+                <p className="mt-2 text-2xl font-medium text-blue-600 dark:text-blue-400">
+                    From {startsAt.toLocaleTimeString(undefined, timeOptions)} onwards
+                </p>
+            </div>
+        );
+    }
+
+    // --- Case 3: Neither date is present (or only end date, which is unlikely) ---
     return (
-        <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="text-center sm:text-left">
-                <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Starts</p>
-                <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleString(undefined, fullOptions)}</p>
-            </div>
-            <div className="text-center sm:text-right">
-                <p className="text-sm font-semibold text-gray-500 dark:text-zinc-400">Ends</p>
-                <p className="mt-1 text-lg font-bold text-gray-900 dark:text-zinc-100">{endsAt.toLocaleString(undefined, fullOptions)}</p>
-            </div>
+        <div className="text-center text-base text-gray-500 dark:text-zinc-400">
+            <p>Date & Time to be announced</p>
         </div>
     );
 }
 
 export default function EventHeader({ event, eventId }: { event: Event, eventId: string }) {
-    const [isExpanded, setIsExpanded] = useState(true); // Default to expanded on initial render
+    const [isExpanded, setIsExpanded] = useState(true);
 
-    // On the client, check window width to decide if it should be collapsed on mobile
     useEffect(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             setIsExpanded(false);
         }
     }, []);
 
-    const startsDate = new Date(event.startsAt.seconds * 1000);
-    const endsDate = new Date(event.endsAt.seconds * 1000);
+    // ✨ MODIFIED: Safely create Date objects, allowing them to be null if the data is missing.
+    const startsDate = event.startsAt ? new Date(event.startsAt.seconds * 1000) : null;
+    const endsDate = event.endsAt ? new Date(event.endsAt.seconds * 1000) : null;
 
     return (
         <div className="mb-12 rounded-2xl bg-white ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
@@ -85,10 +106,13 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100 sm:text-4xl">{event.title}</h1>
                     <StatusBadge status={event.status} />
                 </div>
-                <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400">
-                    <MapPinIcon className="h-4 w-4" />
-                    <span>{event.locationText}</span>
-                </div>
+                {/* Only show location if it exists */}
+                {event.locationText && (
+                    <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400">
+                        <MapPinIcon className="h-4 w-4" />
+                        <span>{event.locationText}</span>
+                    </div>
+                )}
             </div>
 
             <AnimatePresence>

@@ -31,11 +31,9 @@ export type CreateEventState = {
 const CreateEventSchema = z.object({
     title: z.string().min(3, { message: "Title must be at least 3 characters." }),
     description: z.string().optional(),
-    locationText: z.string().min(3, { message: "Please provide a clear event location." }),
-    // Zod's `coerce.date` will convert the string from the form into a JavaScript Date object
-    startsAt: z.coerce.date(),
-    endsAt: z.coerce.date(),
-    // `url()` validates the input. `optional().or(z.literal(''))` allows the field to be empty.
+    locationText: z.string().optional(),
+    startsAt: z.coerce.date().optional(),
+    endsAt: z.coerce.date().optional(),
     logoUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
     bannerUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
 });
@@ -50,8 +48,8 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
         title: formData.get('title'),
         description: formData.get('description'),
         locationText: formData.get('locationText'),
-        startsAt: formData.get('startsAt'),
-        endsAt: formData.get('endsAt'),
+        startsAt: formData.get('startsAt') || undefined, // Treat empty string as undefined
+        endsAt: formData.get('endsAt') || undefined,     // Treat empty string as undefined
         logoUrl: formData.get('logoUrl'),
         bannerUrl: formData.get('bannerUrl'),
     });
@@ -65,8 +63,8 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
 
     const { title, description, locationText, startsAt, endsAt, logoUrl, bannerUrl } = validatedFields.data;
 
-    // Server-side validation for dates
-    if (startsAt >= endsAt) {
+    // ✨ MODIFIED: Date validation now only runs if both dates are provided.
+    if (startsAt && endsAt && startsAt >= endsAt) {
         return { message: "The event's end time must be after its start time." };
     }
 
@@ -80,6 +78,7 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
         const eventId = nanoid(6).toUpperCase();
         const eventRef = adminDb.doc(`organizations/${organizationId}/events/${eventId}`);
 
+        // ✨ MODIFIED: Handles optional fields by saving them as null if not provided.
         await eventRef.set({
             id: eventId,
             title: title,
@@ -88,9 +87,9 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
             admins: [session.uid],
             createdAt: Timestamp.now(),
             status: 'scheduled',
-            startsAt: Timestamp.fromDate(startsAt),
-            endsAt: Timestamp.fromDate(endsAt),
-            locationText: locationText,
+            startsAt: startsAt ? Timestamp.fromDate(startsAt) : null,
+            endsAt: endsAt ? Timestamp.fromDate(endsAt) : null,
+            locationText: locationText || '',
             logoUrl: logoUrl || null,
             bannerUrl: bannerUrl || null,
         });
@@ -98,7 +97,6 @@ export async function createEvent(prevState: CreateEventState, formData: FormDat
         console.error("Event Creation Error:", error);
         return { message: "Database error: Failed to create event." };
     }
-
 
     revalidatePath('/dashboard/events');
     redirect('/dashboard/events');
@@ -112,19 +110,26 @@ export async function updateEvent(prevState: UpdateEventState, formData: FormDat
     if (!session?.uid) return { message: "Authentication error." };
 
     const UpdateEventSchema = z.object({
-        docId: z.string(), // The form will now pass the unique Firestore document ID
-        id: z.string(), // This is the short, user-facing ID
+        docId: z.string(),
+        id: z.string(),
         title: z.string().min(3, { message: "Title must be at least 3 characters." }),
         description: z.string().optional(),
-        locationText: z.string().min(3, { message: "Location text is required." }),
-        startsAt: z.coerce.date(),
-        endsAt: z.coerce.date(),
+        locationText: z.string().optional(),
+        startsAt: z.coerce.date().optional(),
+        endsAt: z.coerce.date().optional(),
         status: z.enum(['scheduled', 'live', 'paused', 'ended', 'cancelled']),
         logoUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
         bannerUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
     });
 
-    const validatedFields = UpdateEventSchema.safeParse(Object.fromEntries(formData));
+    // ✨ FIXED: Explicitly type formObject to allow undefined values.
+    const formObject: { [k: string]: FormDataEntryValue | undefined } = Object.fromEntries(formData);
+
+    // This logic now works correctly with the new type.
+    if (formObject.startsAt === '') formObject.startsAt = undefined;
+    if (formObject.endsAt === '') formObject.endsAt = undefined;
+
+    const validatedFields = UpdateEventSchema.safeParse(formObject);
 
     if (!validatedFields.success) {
         return { errors: validatedFields.error.flatten().fieldErrors, message: 'Missing or invalid fields.' };
@@ -132,7 +137,7 @@ export async function updateEvent(prevState: UpdateEventState, formData: FormDat
 
     const { docId, id: shortId, ...updateData } = validatedFields.data;
 
-    if (updateData.startsAt >= updateData.endsAt) {
+    if (updateData.startsAt && updateData.endsAt && updateData.startsAt >= updateData.endsAt) {
         return { message: "End time must be after start time." };
     }
 
@@ -149,10 +154,10 @@ export async function updateEvent(prevState: UpdateEventState, formData: FormDat
         await eventRef.update({
             title: updateData.title,
             description: updateData.description || '',
-            locationText: updateData.locationText,
+            locationText: updateData.locationText || '',
             status: updateData.status,
-            startsAt: Timestamp.fromDate(updateData.startsAt),
-            endsAt: Timestamp.fromDate(updateData.endsAt),
+            startsAt: updateData.startsAt ? Timestamp.fromDate(updateData.startsAt) : null,
+            endsAt: updateData.endsAt ? Timestamp.fromDate(updateData.endsAt) : null,
             logoUrl: updateData.logoUrl || null,
             bannerUrl: updateData.bannerUrl || null,
         });

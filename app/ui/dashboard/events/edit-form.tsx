@@ -102,18 +102,18 @@ export default function EditEventForm({ event }: { event: Event }) {
                         <div className="mt-4 space-y-6">
                             <div>
                                 <label htmlFor="locationText" className="mb-2 block text-sm font-medium">Location</label>
-                                <input id="locationText" name="locationText" type="text" defaultValue={event.locationText} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
+                                <input id="locationText" name="locationText" type="text" defaultValue={event.locationText} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"  />
                                 {state.errors?.locationText && <p className="mt-2 text-xs text-red-500">{state.errors.locationText[0]}</p>}
                             </div>
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                 <div>
                                     <label htmlFor="startsAt" className="mb-2 block text-sm font-medium">Starts At</label>
-                                    <input id="startsAt" name="startsAt" type="datetime-local" defaultValue={formatTimestampForInput(event.startsAt)} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
+                                    <input id="startsAt" name="startsAt" type="datetime-local" defaultValue={formatTimestampForInput(event.startsAt)} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"  />
                                     {state.errors?.startsAt && <p className="mt-2 text-xs text-red-500">{state.errors.startsAt[0]}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="endsAt" className="mb-2 block text-sm font-medium">Ends At</label>
-                                    <input id="endsAt" name="endsAt" type="datetime-local" defaultValue={formatTimestampForInput(event.endsAt)} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800" required />
+                                    <input id="endsAt" name="endsAt" type="datetime-local" defaultValue={formatTimestampForInput(event.endsAt)} className="block w-full rounded-md border-gray-300 bg-gray-50 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"  />
                                     {state.errors?.endsAt && <p className="mt-2 text-xs text-red-500">{state.errors.endsAt[0]}</p>}
                                 </div>
                             </div>
