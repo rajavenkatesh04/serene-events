@@ -29,6 +29,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
         <body className={`${calSans.className} antialiased bg-white text-gray-900 dark:bg-zinc-950 dark:text-zinc-100`}>
+        <meta name="apple-mobile-web-app-title" content="Serene" />
         <ThemeProvider
             attribute="class"
             defaultTheme="system"

@@ -10,7 +10,8 @@ export default function TabNavigation({ eventId }: { eventId: string }) {
     const tabs = [
         { name: 'Announcements', href: `/e/${eventId}` },
         { name: 'Chat', href: `/e/${eventId}/chat` },
-        { name: 'Engage', href: `/e/${eventId}/engage` },
+        { name: 'Feedback', href: `/e/${eventId}/feedback` },
+        // { name: 'Engage', href: `/e/${eventId}/engage` },
     ];
 
     return (
