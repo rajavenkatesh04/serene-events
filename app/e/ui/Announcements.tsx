@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // --- HELPER COMPONENTS ---
 
@@ -222,7 +224,9 @@ export function CompactAnnouncementCard({ announcement, isRecent, isExpanded, on
                 </button>
             </header>
             <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-zinc-300">
-                <p className="whitespace-pre-wrap">{announcement.content}</p>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {announcement.content}
+                </ReactMarkdown>
             </div>
             <AttachmentCard attachment={announcement.attachment} />
             <AnnouncementMap location={announcement.location} />
@@ -415,7 +419,8 @@ export default function Announcements({ announcements, isLoading }: { announceme
                 ) : (
                     <div className="rounded-lg border-2 border-dashed border-gray-300/80 bg-white/50 py-20 text-center dark:border-zinc-800/50 dark:bg-zinc-900/50">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">{searchTerm ? 'No Matching Updates' : 'No Live Updates Yet'}</h3>
-                        <p className="mt-1 text-gray-500 dark:text-zinc-400">{searchTerm ? 'Try a different search term.' : 'Stay tuned for real-time announcements!'}</p>
+                        <p className="mt-1 text-gray-500 dark:text-zinc-400">{searchTerm ? 'Try a different search term.' : 'Stay tuned for real-time announcements!'}
+                        </p>
                     </div>
                 )}
             </div>
