@@ -32,11 +32,15 @@ export default function NavLinks({ inviteCount, userRole }: { inviteCount: numbe
                         key={link.name}
                         href={link.href}
                         className={clsx(
-                            'relative flex h-12 w-12 items-center justify-center rounded-full text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
+                            // Base styles for all links
+                            'relative flex h-12 w-12 items-center justify-center rounded-full text-gray-600 transition-colors duration-200 hover:bg-blue-100/50 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
+
+                            // Responsive styles for medium screens and up
                             'md:h-[48px] md:w-full md:rounded-md md:justify-start md:px-3 md:gap-2',
+
+                            // Active link styles using the new brand color
                             {
-                                'border border-pink-200 bg-pink-100 text-pink-600 dark:border-pink-800/50 dark:bg-pink-900/20 dark:text-pink-300': pathname === link.href,
-                                'md:bg-gray-100 md:text-gray-900 md:dark:bg-zinc-800 md:dark:text-zinc-100': pathname === link.href,
+                                'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-300': pathname === link.href,
                             },
                         )}
                         title={link.name}

@@ -23,8 +23,11 @@ import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
 import { AnnouncementsTabSkeleton } from '@/app/ui/skeletons';
 import MapLocationModal from './map-location-modal';
 import { APIProvider, Map, AdvancedMarker, useMap, InfoWindow } from '@vis.gl/react-google-maps';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-// --- Sub-components ---
+
+// --- Sub-components (No changes here) ---
 
 function SubmitButton({ isUploading }: { isUploading: boolean }) {
     const { pending } = useFormStatus();
@@ -180,6 +183,7 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [attachmentToPreview, setAttachmentToPreview] = useState<Announcement['attachment'] | null>(null);
+    const [content, setContent] = useState('');
 
     const handleFormSubmit = (formData: FormData) => {
         if (fileToUpload) {
@@ -242,6 +246,7 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     useEffect(() => {
         if (state.message?.startsWith('Successfully')) {
             formRef.current?.reset();
+            setContent('');
             setSelectedLocation(null);
             setFileToUpload(null);
             setUploadProgress(0);
@@ -256,19 +261,42 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
         <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
             <div>
                 <form action={handleFormSubmit} ref={formRef} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                    <h3 className="mb-2 font-semibold tracking-wide text-gray-900 dark:text-zinc-100">Create New Announcement</h3>
+                    <h3 className="mb-4 font-semibold tracking-wide text-gray-900 dark:text-zinc-100">Create New Announcement</h3>
                     <input type="hidden" name="eventId" value={eventId} />
-                    <div className="mb-2">
+                    <div className="mb-4">
+                        <label htmlFor="title" className="sr-only">Title</label>
                         <input name="title" id="title" required placeholder="Announcement Title" className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500" />
                     </div>
-                    <div className="mb-4">
-                        <textarea name="content" id="content" required rows={3} placeholder="Write your update here..." className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"></textarea>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6">
+                        <div>
+                            <label htmlFor="content" className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300">Content (Markdown Supported)</label>
+                            <textarea
+                                name="content"
+                                id="content"
+                                required
+                                placeholder="Write your update here..."
+                                className="block w-full h-64 resize-none rounded-md border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300">Live Preview</label>
+                            <div className="w-full h-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {content || "Start typing to see a preview..."}
+                                    </ReactMarkdown>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {selectedLocation && <input type="hidden" name="location" value={JSON.stringify(selectedLocation)} />}
                     <input type="file" ref={fileInputRef} onChange={(e) => setFileToUpload(e.target.files ? e.target.files[0] : null)} className="hidden" />
 
-                    <div className='space-y-4 mb-4'>
+                    <div className='space-y-4 my-4'>
                         {selectedLocation && (
                             <div className="text-sm text-gray-600 dark:text-zinc-400 font-medium bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-md px-3 py-2">
                                 📍 Location Added: <span className='text-gray-800 dark:text-zinc-200'>{selectedLocation.name}</span>
@@ -292,7 +320,7 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                         )}
                     </div>
 
-                    <div className="flex flex-col-reverse items-stretch gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-col-reverse items-stretch gap-4 border-t border-gray-200 pt-4 dark:border-zinc-800 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-2">
                             <label htmlFor="isPinned" className="flex cursor-pointer items-center rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
                                 <input type="checkbox" id="isPinned" name="isPinned" className="sr-only peer" />
@@ -330,7 +358,11 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                                                 {ann.isPinned && <BookmarkIcon className="h-5 w-5 text-amber-500" title="Pinned Announcement" />}
                                                 <h3 className="font-semibold text-gray-900 dark:text-zinc-100">{ann.title}</h3>
                                             </div>
-                                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-zinc-300">{ann.content}</p>
+                                            <div className="prose prose-sm dark:prose-invert max-w-none mt-1 text-gray-600 dark:text-zinc-300 line-clamp-3">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]} disallowedElements={['h1', 'h2', 'h3']}>
+                                                    {ann.content}
+                                                </ReactMarkdown>
+                                            </div>
                                         </div>
                                         <form action={deleteAnnouncement}>
                                             <input type="hidden" name="eventId" value={eventId} />
@@ -376,7 +408,7 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                                                 </Map>
                                             </div>
                                             <a
-                                                href={`https://www.google.com/maps/dir/?api=1&destination=$${ann.location.center.lat},${ann.location.center.lng}`}
+                                                href={`http://googleusercontent.com/maps/google.com/6{ann.location.center.lat},${ann.location.center.lng}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"
