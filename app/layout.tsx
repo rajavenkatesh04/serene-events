@@ -39,9 +39,17 @@ export default function RootLayout({
         >
             {children}
             <CookieConsentBanner />
+            {/* Vercel Analytics */}
             <Analytics />
         </ThemeProvider>
-        {/* Vercel Analytics */}
+
+
+        {/* Cloudflare Web Analytics */}
+        <Script
+            strategy="afterInteractive"
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon='{"token": "a270989e39084ad79012eb2e96ab5b1f"}'
+        />
 
 
         {/* Microsoft Clarity Script */}
