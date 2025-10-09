@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:3000", "https://luna-83jo.vercel.app"],
+    "origin": ["http://localhost:3000", "https://serene-events.vercel.app"],
     "method": ["GET"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"]
