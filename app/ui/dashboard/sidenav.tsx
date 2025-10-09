@@ -1,5 +1,4 @@
 import Link from "next/link";
-import LunaLogo from "@/app/ui/luna-logo";
 import NavLinks from "@/app/ui/dashboard/nav-links";
 import { auth } from '@/app/lib/firebase-admin';
 import { fetchUserProfile, fetchPendingInvites  } from '@/app/lib/data';

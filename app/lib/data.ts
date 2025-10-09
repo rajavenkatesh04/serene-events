@@ -1,12 +1,8 @@
 // app/lib/data.ts
 
 import { unstable_noStore as noStore } from 'next/cache';
-import {User, Event, Invitation, FirestoreTimestamp, Organisation} from '@/app/lib/definitions';
-// Switch to using the ADMIN Firestore instance for all server-side data fetching
+import {User, Event, Invitation, Announcement, FirestoreTimestamp, Organisation, FeedbackSummary, FeedbackResponse} from '@/app/lib/definitions';
 import { adminDb } from './firebase-server';
-import { Timestamp } from 'firebase-admin/firestore';
-import { Announcement } from '@/app/lib/definitions';
-import { FeedbackSummary, FeedbackResponse } from './definitions';
 
 // Helper function to safely serialize Firestore Timestamps
 const serializeTimestamp = (timestamp: unknown) => {
@@ -485,12 +481,56 @@ export async function fetchRecentFeedback(userId: string, eventId: string, limit
             return {
                 id: doc.id,
                 fullName: data.fullName,
+                email: data.email, // Added the missing email field
+                registrationId: data.registrationId,
                 comments: data.comments,
                 submittedAt: serializeTimestamp(data.submittedAt) as FirestoreTimestamp,
-            };
+                registrationRating: data.registrationRating,
+                communicationRating: data.communicationRating,
+                venueRating: data.venueRating,
+                pacingRating: data.pacingRating,
+            } as FeedbackResponse;
         });
     } catch (error) {
         console.error('Database Error fetching recent feedback:', error);
+        return [];
+    }
+}
+
+
+
+export async function fetchAllFeedback(userId: string, eventId: string): Promise<FeedbackResponse[]> {
+    noStore();
+    try {
+        const event = await fetchEventById(userId, eventId);
+        if (!event || !event.organizationId) return [];
+
+        const feedbackPath = `organizations/${event.organizationId}/events/${event.docId}/feedback`;
+        const feedbackSnapshot = await adminDb.collection(feedbackPath)
+            .orderBy('submittedAt', 'desc')
+            .get();
+
+        if (feedbackSnapshot.empty) {
+            return [];
+        }
+
+        return feedbackSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                fullName: data.fullName,
+                email: data.email,
+                registrationId: data.registrationId,
+                comments: data.comments,
+                submittedAt: serializeTimestamp(data.submittedAt) as FirestoreTimestamp,
+                registrationRating: data.registrationRating,
+                communicationRating: data.communicationRating,
+                venueRating: data.venueRating,
+                pacingRating: data.pacingRating,
+            } as FeedbackResponse; // Ensure you update the FeedbackResponse type in definitions.ts
+        });
+    } catch (error) {
+        console.error('Database Error fetching all feedback:', error);
         return [];
     }
 }

@@ -145,9 +145,17 @@ export type FeedbackSummary = {
     pacingRating: FeedbackRatingCounts;
 };
 
+// In app/lib/definitions.ts, update the FeedbackResponse type
+
 export type FeedbackResponse = {
     id: string;
     fullName: string;
+    email: string;
+    registrationId?: string;
     comments?: string;
     submittedAt: FirestoreTimestamp;
+    registrationRating?: string;
+    communicationRating?: string;
+    venueRating?: string;
+    pacingRating?: string;
 };

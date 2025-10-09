@@ -1,10 +1,22 @@
-export default function Page() {
+import { Suspense } from 'react';
+import { auth } from '@/app/lib/firebase-admin';
+import { notFound } from 'next/navigation';
+import { fetchAllFeedback } from '@/app/lib/data';
+import FeedbackTab from '@/app/ui/dashboard/events/feedback-tab';
+import { EventDetailsPageSkeleton } from '@/app/ui/skeletons';
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+    const session = await auth.getSession();
+    if (!session) notFound();
+
+    const { id } = await params;
+
+    // Fetch all feedback responses for the given event
+    const responses = await fetchAllFeedback(session.uid, id);
+
     return (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-zinc-100">Feedback Analysis</h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">
-                A detailed breakdown of all submitted feedback, including charts and individual responses, will be displayed here.
-            </p>
-        </div>
+        <Suspense fallback={<EventDetailsPageSkeleton />}>
+            <FeedbackTab responses={responses} />
+        </Suspense>
     );
 }
