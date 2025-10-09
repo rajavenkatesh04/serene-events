@@ -173,17 +173,13 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const initialState: CreateAnnouncementState = { message: null, errors: {} };
     const [state, dispatch] = useActionState(createAnnouncement, initialState);
-
-    // ✨ FIX: Add useTransition hook
     const [isTransitioning, startTransition] = useTransition();
-
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<Announcement['location'] | null>(null);
     const [fileToUpload, setFileToUpload] = useState<File | null>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [attachmentToPreview, setAttachmentToPreview] = useState<Announcement['attachment'] | null>(null);
-
 
     const handleFormSubmit = (formData: FormData) => {
         if (fileToUpload) {
@@ -210,8 +206,6 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                             type: fileToUpload.type,
                         };
                         formData.append('attachment', JSON.stringify(attachmentData));
-
-                        // ✨ FIX: Wrap action call in startTransition
                         startTransition(() => {
                             dispatch(formData);
                         });
@@ -219,7 +213,6 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                 }
             );
         } else {
-            // ✨ FIX: Wrap action call in startTransition
             startTransition(() => {
                 dispatch(formData);
             });
@@ -260,120 +253,118 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     if (isLoading) return <AnnouncementsTabSkeleton />;
 
     return (
-        <div>
-            <form action={handleFormSubmit} ref={formRef} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                <h3 className="mb-2 font-semibold tracking-wide text-gray-900 dark:text-zinc-100">Create New Announcement</h3>
-                <input type="hidden" name="eventId" value={eventId} />
-                <div className="mb-2">
-                    <input name="title" id="title" required placeholder="Announcement Title" className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500" />
-                </div>
-                <div className="mb-4">
-                    <textarea name="content" id="content" required rows={3} placeholder="Write your update here..." className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"></textarea>
-                </div>
-
-                {selectedLocation && <input type="hidden" name="location" value={JSON.stringify(selectedLocation)} />}
-                <input type="file" ref={fileInputRef} onChange={(e) => setFileToUpload(e.target.files ? e.target.files[0] : null)} className="hidden" />
-
-                <div className='space-y-4 mb-4'>
-                    {selectedLocation && (
-                        <div className="text-sm text-gray-600 dark:text-zinc-400 font-medium bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-md px-3 py-2">
-                            📍 Location Added: <span className='text-gray-800 dark:text-zinc-200'>{selectedLocation.name}</span>
-                        </div>
-                    )}
-
-                    {fileToUpload && (
-                        <div className="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-700 dark:text-zinc-300 truncate">{fileToUpload.name}</p>
-                                <button type="button" onClick={() => { setFileToUpload(null); if(fileInputRef.current) fileInputRef.current.value = ""; }} className="p-1 text-gray-400 hover:text-red-500">
-                                    <XCircleIcon className="h-5 w-5" />
-                                </button>
-                            </div>
-                            {isUploading && uploadProgress > 0 && uploadProgress < 100 && (
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-zinc-700">
-                                    <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-
-                <div className="flex flex-col-reverse items-stretch gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="isPinned" className="flex cursor-pointer items-center rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
-                            <input type="checkbox" id="isPinned" name="isPinned" className="sr-only peer" />
-                            <BookmarkIcon className="h-5 w-5 peer-checked:text-amber-500 peer-checked:fill-amber-500" />
-                            <span className="ml-2">Pin</span>
-                        </label>
-                        <button type="button" onClick={() => setIsMapModalOpen(true)} className="flex items-center gap-2 rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
-                            <MapPinIcon className="h-5 w-5" />
-                            <span>{selectedLocation ? "Edit Location" : "Add Location"}</span>
-                        </button>
-                        <AttachmentButton onClick={() => fileInputRef.current?.click()} />
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+            <div>
+                <form action={handleFormSubmit} ref={formRef} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <h3 className="mb-2 font-semibold tracking-wide text-gray-900 dark:text-zinc-100">Create New Announcement</h3>
+                    <input type="hidden" name="eventId" value={eventId} />
+                    <div className="mb-2">
+                        <input name="title" id="title" required placeholder="Announcement Title" className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500" />
                     </div>
-                    <SubmitButton isUploading={isUploading} />
-                </div>
-            </form>
+                    <div className="mb-4">
+                        <textarea name="content" id="content" required rows={3} placeholder="Write your update here..." className="block w-full rounded-md border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"></textarea>
+                    </div>
 
-            <MapLocationModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} onSave={(loc) => setSelectedLocation(loc)} />
+                    {selectedLocation && <input type="hidden" name="location" value={JSON.stringify(selectedLocation)} />}
+                    <input type="file" ref={fileInputRef} onChange={(e) => setFileToUpload(e.target.files ? e.target.files[0] : null)} className="hidden" />
 
-            {attachmentToPreview && (
-                <AttachmentPreviewModal
-                    attachment={attachmentToPreview}
-                    onClose={() => setAttachmentToPreview(null)}
-                />
-            )}
+                    <div className='space-y-4 mb-4'>
+                        {selectedLocation && (
+                            <div className="text-sm text-gray-600 dark:text-zinc-400 font-medium bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-md px-3 py-2">
+                                📍 Location Added: <span className='text-gray-800 dark:text-zinc-200'>{selectedLocation.name}</span>
+                            </div>
+                        )}
 
-
-            <div className="mt-8">
-                <h3 className="mb-4 font-semibold text-gray-900 dark:text-zinc-100">Posted Announcements</h3>
-                {announcements.length > 0 ? (
-                    <ul className="space-y-4">
-                        {announcements.map((ann) => (
-                            <li key={ann.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 pr-4">
-                                        <div className="flex items-center gap-2">
-                                            {ann.isPinned && <BookmarkIcon className="h-5 w-5 text-amber-500" title="Pinned Announcement" />}
-                                            <h3 className="font-semibold text-gray-900 dark:text-zinc-100">{ann.title}</h3>
-                                        </div>
-                                        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-zinc-300">{ann.content}</p>
-                                    </div>
-                                    <form action={deleteAnnouncement}>
-                                        <input type="hidden" name="eventId" value={eventId} />
-                                        <input type="hidden" name="announcementId" value={ann.id} />
-                                        <DeleteButton />
-                                    </form>
+                        {fileToUpload && (
+                            <div className="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-gray-700 dark:text-zinc-300 truncate">{fileToUpload.name}</p>
+                                    <button type="button" onClick={() => { setFileToUpload(null); if(fileInputRef.current) fileInputRef.current.value = ""; }} className="p-1 text-gray-400 hover:text-red-500">
+                                        <XCircleIcon className="h-5 w-5" />
+                                    </button>
                                 </div>
-
-                                {ann.attachment && (
-                                    <div className="mt-4">
-                                        <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                                            <PaperClipIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                                            <span className="text-sm font-medium text-gray-800 dark:text-zinc-200 truncate flex-1">{ann.attachment.name}</span>
-                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setAttachmentToPreview(ann.attachment)}
-                                                    className="p-1 text-gray-500 hover:text-blue-600"
-                                                    aria-label="Preview attachment"
-                                                >
-                                                    <EyeIcon className="h-5 w-5" />
-                                                </button>
-                                                <a href={ann.attachment.url} download={ann.attachment.name} className="p-1 text-gray-500 hover:text-blue-600" aria-label="Download attachment">
-                                                    <ArrowDownTrayIcon className="h-5 w-5" />
-                                                </a>
-                                            </div>
-                                        </div>
+                                {isUploading && uploadProgress > 0 && uploadProgress < 100 && (
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-zinc-700">
+                                        <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                                     </div>
                                 )}
+                            </div>
+                        )}
+                    </div>
 
-                                {ann.location && (
-                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-800">
-                                        <h4 className="text-sm font-medium text-gray-800 dark:text-zinc-200 flex items-center gap-1"><MapPinIcon className="h-4 w-4" />{ann.location.name}</h4>
-                                        <div className="mt-2 h-48 w-full rounded-lg overflow-hidden">
-                                            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+                    <div className="flex flex-col-reverse items-stretch gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="isPinned" className="flex cursor-pointer items-center rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
+                                <input type="checkbox" id="isPinned" name="isPinned" className="sr-only peer" />
+                                <BookmarkIcon className="h-5 w-5 peer-checked:text-amber-500 peer-checked:fill-amber-500" />
+                                <span className="ml-2">Pin</span>
+                            </label>
+                            <button type="button" onClick={() => setIsMapModalOpen(true)} className="flex items-center gap-2 rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
+                                <MapPinIcon className="h-5 w-5" />
+                                <span>{selectedLocation ? "Edit Location" : "Add Location"}</span>
+                            </button>
+                            <AttachmentButton onClick={() => fileInputRef.current?.click()} />
+                        </div>
+                        <SubmitButton isUploading={isUploading} />
+                    </div>
+                </form>
+
+                <MapLocationModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} onSave={(loc) => setSelectedLocation(loc)} />
+
+                {attachmentToPreview && (
+                    <AttachmentPreviewModal
+                        attachment={attachmentToPreview}
+                        onClose={() => setAttachmentToPreview(null)}
+                    />
+                )}
+
+                <div className="mt-8">
+                    <h3 className="mb-4 font-semibold text-gray-900 dark:text-zinc-100">Posted Announcements</h3>
+                    {announcements.length > 0 ? (
+                        <ul className="space-y-4">
+                            {announcements.map((ann) => (
+                                <li key={ann.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1 pr-4">
+                                            <div className="flex items-center gap-2">
+                                                {ann.isPinned && <BookmarkIcon className="h-5 w-5 text-amber-500" title="Pinned Announcement" />}
+                                                <h3 className="font-semibold text-gray-900 dark:text-zinc-100">{ann.title}</h3>
+                                            </div>
+                                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-zinc-300">{ann.content}</p>
+                                        </div>
+                                        <form action={deleteAnnouncement}>
+                                            <input type="hidden" name="eventId" value={eventId} />
+                                            <input type="hidden" name="announcementId" value={ann.id} />
+                                            <DeleteButton />
+                                        </form>
+                                    </div>
+
+                                    {ann.attachment && (
+                                        <div className="mt-4">
+                                            <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                                <PaperClipIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                                                <span className="text-sm font-medium text-gray-800 dark:text-zinc-200 truncate flex-1">{ann.attachment.name}</span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAttachmentToPreview(ann.attachment)}
+                                                        className="p-1 text-gray-500 hover:text-blue-600"
+                                                        aria-label="Preview attachment"
+                                                    >
+                                                        <EyeIcon className="h-5 w-5" />
+                                                    </button>
+                                                    <a href={ann.attachment.url} download={ann.attachment.name} className="p-1 text-gray-500 hover:text-blue-600" aria-label="Download attachment">
+                                                        <ArrowDownTrayIcon className="h-5 w-5" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {ann.location && (
+                                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-800">
+                                            <h4 className="text-sm font-medium text-gray-800 dark:text-zinc-200 flex items-center gap-1"><MapPinIcon className="h-4 w-4" />{ann.location.name}</h4>
+                                            <div className="mt-2 h-48 w-full rounded-lg overflow-hidden">
                                                 <Map
                                                     defaultCenter={ann.location.center}
                                                     defaultZoom={16}
@@ -383,36 +374,36 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                                                 >
                                                     <AnnouncementMap location={ann.location} />
                                                 </Map>
-                                            </APIProvider>
+                                            </div>
+                                            <a
+                                                href={`https://www.google.com/maps/dir/?api=1&destination=$${ann.location.center.lat},${ann.location.center.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"
+                                            >
+                                                Get Directions
+                                            </a>
                                         </div>
-                                        <a
-                                            href={`https://www.google.com/maps/dir/?api=1&destination=${ann.location.center.lat},${ann.location.center.lng}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"
-                                        >
-                                            Get Directions
-                                        </a>
-                                    </div>
-                                )}
-
-                                <div className="mt-3 flex items-center justify-between gap-4 border-t border-gray-200 pt-3 text-xs text-gray-500 dark:border-zinc-800 dark:text-zinc-400">
-                                    <span className="flex items-center gap-1.5 font-medium"><UserCircleIcon className="w-4 h-4" /> {ann.authorName}</span>
-                                    {ann.createdAt?.seconds && (
-                                        <span className="flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" />
-                                            {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ann.createdAt.seconds * 1000))}
-                                        </span>
                                     )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <div className="rounded-lg border border-dashed border-gray-300 bg-white py-12 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                        <p className="text-gray-500 dark:text-zinc-400">No announcements have been sent for this event yet.</p>
-                    </div>
-                )}
+
+                                    <div className="mt-3 flex items-center justify-between gap-4 border-t border-gray-200 pt-3 text-xs text-gray-500 dark:border-zinc-800 dark:text-zinc-400">
+                                        <span className="flex items-center gap-1.5 font-medium"><UserCircleIcon className="w-4 h-4" /> {ann.authorName}</span>
+                                        {ann.createdAt?.seconds && (
+                                            <span className="flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" />
+                                                {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ann.createdAt.seconds * 1000))}
+                                            </span>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div className="rounded-lg border border-dashed border-gray-300 bg-white py-12 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                            <p className="text-gray-500 dark:text-zinc-400">No announcements have been sent for this event yet.</p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </APIProvider>
     );
 }
