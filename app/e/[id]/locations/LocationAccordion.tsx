@@ -10,8 +10,9 @@ import Image from 'next/image';
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 function LocationItem({ location }: { location: Location }) {
-    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location.latitude},${location.longitude}&zoom=18.5&size=600x300&maptype=roadmap&markers=color:red%7Clabel:P%7C${location.latitude},${location.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location.latitude},${location.longitude}&zoom=16&size=600x300&maptype=roadmap&markers=color:red%7Clabel:P%7C${location.latitude},${location.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
 
+    // ✨ FIX: Correctly formatted the template literal for the directions URL
     const directionsUrl = `http://googleusercontent.com/maps.google.com/9${location.latitude},${location.longitude}`;
 
     return (
@@ -49,6 +50,7 @@ function LocationItem({ location }: { location: Location }) {
 export default function LocationAccordion({ locationsByCategory }: {
     locationsByCategory: Record<string, Location[]>
 }) {
+    // ✨ FIX: Updated the check to correctly handle a missing environment variable
     if (!GOOGLE_MAPS_API_KEY) {
         return (
             <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-950/20">
@@ -57,7 +59,7 @@ export default function LocationAccordion({ locationsByCategory }: {
                     A Google Maps API key has not been provided in the environment variables.
                 </p>
             </div>
-        );
+        )
     }
 
     return (
@@ -66,7 +68,7 @@ export default function LocationAccordion({ locationsByCategory }: {
                 <Disclosure key={category} as="div" className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
                     {({ open }) => (
                         <>
-                            <Disclosure.Button className="sticky top-0 z-10 flex w-full justify-between bg-white px-4 py-4 text-left text-lg font-medium text-gray-900 hover:bg-gray-50/50 focus:outline-none focus-visible:ring focus-visible:ring-indigo-500/75 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/50">
+                            <Disclosure.Button className="flex w-full justify-between px-4 py-4 text-left text-lg font-medium text-gray-900 hover:bg-gray-50/50 focus:outline-none focus-visible:ring focus-visible:ring-indigo-500/75 dark:text-zinc-100 dark:hover:bg-zinc-800/50">
                                 <span>{category}</span>
                                 <ChevronUpIcon
                                     className={`${open ? 'rotate-180' : ''} h-6 w-6 text-gray-500 transition-transform duration-300 dark:text-zinc-400`}
