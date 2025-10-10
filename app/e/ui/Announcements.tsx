@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import {
     MapPinIcon, PaperClipIcon, ArrowDownTrayIcon, DocumentTextIcon, ChevronDownIcon,
-    ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon, EyeIcon, ChevronLeftIcon, ChevronRightIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon
+    ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon, EyeIcon, ChevronLeftIcon, ChevronRightIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
@@ -39,6 +39,7 @@ function SearchBar({ searchTerm, onSearchChange }: { searchTerm: string; onSearc
     );
 }
 
+// ✨ CHANGED: Fully redesigned AttachmentCard for a mobile-first layout.
 function AttachmentCard({ attachment, isCompact = false }: {
     attachment: Announcement['attachment'];
     isCompact?: boolean;
@@ -49,7 +50,7 @@ function AttachmentCard({ attachment, isCompact = false }: {
     const isImage = attachment.type.startsWith('image/');
 
     const handleDownload = async (e: React.MouseEvent) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent card click-through
         setIsDownloading(true);
         const toastId = toast.loading('Starting download...');
         try {
@@ -73,74 +74,46 @@ function AttachmentCard({ attachment, isCompact = false }: {
     };
 
     const handleView = (e: React.MouseEvent) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent card click-through
         if (!attachment?.url) return;
         window.open(attachment.url, '_blank', 'noopener,noreferrer');
     };
 
-    if (isCompact) {
-        return (
-            <div
-                className="mt-3 cursor-pointer rounded-lg border border-gray-200/80 bg-white/50 p-3 hover:bg-white/80 dark:border-zinc-700/50 dark:bg-zinc-800/50 dark:hover:bg-zinc-800/80"
-                onClick={handleView}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                        {isImage ? (
-                            <img src={attachment.url} alt={attachment.name} className="h-10 w-10 rounded object-cover" />
-                        ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 dark:bg-zinc-700">
-                                <DocumentTextIcon className="h-5 w-5 text-slate-400 dark:text-zinc-400" />
-                            </div>
-                        )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-gray-700 dark:text-zinc-300" title={attachment.name}>
-                            {attachment.name}
-                        </p>
-                        <div className="mt-1 flex gap-2">
-                            <button
-                                onClick={handleDownload}
-                                disabled={isDownloading}
-                                className="rounded bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-                            >
-                                {isDownloading ? '...' : 'Download'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="mt-4">
-            <div className="overflow-hidden rounded-lg border border-gray-200/80 dark:border-zinc-700/50">
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                    <div className="flex h-32 items-center justify-center bg-slate-50 dark:bg-zinc-800/50 sm:col-span-1 sm:h-auto">
-                        {attachment.type.startsWith('image/') ? (
-                            <img src={attachment.url} alt={attachment.name} className="h-full w-full object-cover" />
-                        ) : (
-                            <DocumentTextIcon className="h-10 w-10 text-slate-400 dark:text-zinc-500" />
-                        )}
-                    </div>
-                    <div className="flex flex-col justify-center p-4 sm:col-span-2">
-                        <p className="font-semibold text-gray-800 dark:text-zinc-200 truncate" title={attachment.name}>{attachment.name}</p>
-                        <div className="mt-4 flex flex-col items-stretch gap-2">
-                            <button onClick={handleView} className="flex items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-zinc-700/50 dark:text-zinc-200 dark:ring-zinc-600 dark:hover:bg-zinc-700">
-                                <EyeIcon className="h-4 w-4" /> View
-                            </button>
-                            <button onClick={handleDownload} disabled={isDownloading} className="flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50">
-                                {isDownloading ? <LoadingSpinner className="h-4 w-4" /> : <ArrowDownTrayIcon className="h-4 w-4" />}
-                                Download
-                            </button>
+            <div className="flex items-center gap-3 rounded-lg border border-gray-200/80 bg-slate-50/50 p-3 dark:border-zinc-700/50 dark:bg-zinc-800/40">
+                {/* Left: Preview */}
+                <div className="flex-shrink-0">
+                    {isImage ? (
+                        <img src={attachment.url} alt={attachment.name} className="h-12 w-12 rounded-md object-cover" />
+                    ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-slate-100 dark:bg-zinc-700">
+                            <DocumentTextIcon className="h-6 w-6 text-slate-400 dark:text-zinc-400" />
                         </div>
-                    </div>
+                    )}
+                </div>
+
+                {/* Middle: File Name */}
+                <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-800 dark:text-zinc-200" title={attachment.name}>
+                        {attachment.name}
+                    </p>
+                </div>
+
+                {/* Right: Action Buttons */}
+                <div className="flex flex-shrink-0 items-center gap-2">
+                    <button onClick={handleView} title="View" className="rounded-full p-2 text-gray-500 hover:bg-gray-200/80 dark:text-zinc-400 dark:hover:bg-zinc-700/60">
+                        <EyeIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={handleDownload} disabled={isDownloading} title="Download" className="rounded-full p-2 text-gray-500 hover:bg-gray-200/80 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-700/60">
+                        {isDownloading ? <LoadingSpinner className="h-5 w-5" /> : <ArrowDownTrayIcon className="h-5 w-5" />}
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
+
 
 function AnnouncementMap({ location }: { location: Announcement['location'] }) {
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -234,8 +207,8 @@ export function CompactAnnouncementCard({ announcement, isRecent, isExpanded, on
     );
 }
 
-// --- NEW STYLED PinnedCarousel COMPONENT ---
-function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
+// ✨ CHANGED: Updated PinnedCarousel to show full content and a "View Details" button.
+function PinnedCarousel({ announcements, onViewDetails }: { announcements: Announcement[]; onViewDetails: (id: string) => void; }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -254,18 +227,8 @@ function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
         };
     }, [announcements.length]);
 
-    const handleIndicatorClick = (index: number) => {
-        setCurrentIndex(index);
-        resetTimer();
-    };
-
-    const handlePrevious = () => {
-        setCurrentIndex(prev => (prev - 1 + announcements.length) % announcements.length);
-        resetTimer();
-    };
-
-    const handleNext = () => {
-        setCurrentIndex(prev => (prev + 1) % announcements.length);
+    const handleInteraction = (action: () => void) => {
+        action();
         resetTimer();
     };
 
@@ -275,44 +238,33 @@ function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
         <section className="mb-12" aria-labelledby="pinned-announcements-title">
             <div className="flex items-center justify-between mb-4">
                 <h2 id="pinned-announcements-title" className="text-lg font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-                    <BookmarkSolidIcon className="h-5 w-5 text-amber-500" />
-                    Pinned Announcements
+                    <BookmarkSolidIcon className="h-5 w-5 text-amber-500" /> Pinned Announcements
                 </h2>
                 {announcements.length > 1 && (
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={handlePrevious}
-                            className="p-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
-                            aria-label="Previous announcement"
-                        >
+                        <button onClick={() => handleInteraction(() => setCurrentIndex(prev => (prev - 1 + announcements.length) % announcements.length))} className="p-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700" aria-label="Previous announcement">
                             <ChevronLeftIcon className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
                         </button>
-                        <button
-                            onClick={handleNext}
-                            className="p-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
-                            aria-label="Next announcement"
-                        >
+                        <button onClick={() => handleInteraction(() => setCurrentIndex(prev => (prev + 1) % announcements.length))} className="p-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700" aria-label="Next announcement">
                             <ChevronRightIcon className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
                         </button>
                     </div>
                 )}
             </div>
             <div className="overflow-hidden relative">
-                <div
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                >
+                <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
                     {announcements.map((ann) => (
-                        <article
-                            key={ann.id}
-                            className="flex-shrink-0 w-full rounded-lg border border-amber-500/30 bg-amber-50/30 p-4 dark:border-amber-500/20 dark:bg-amber-950/20"
-                            style={{ minHeight: '180px' }}
-                        >
+                        <article key={ann.id} className="flex-shrink-0 w-full rounded-lg border border-amber-500/30 bg-amber-50/30 p-4 dark:border-amber-500/20 dark:bg-amber-950/20">
                             <div className="flex flex-col h-full">
-                                <h3 className="font-semibold text-gray-900 dark:text-zinc-100 line-clamp-2">{ann.title}</h3>
-                                <p className="text-sm text-gray-600 dark:text-zinc-400 line-clamp-2 mt-1 flex-grow">{ann.content}</p>
+                                <h3 className="font-semibold text-gray-900 dark:text-zinc-100">{ann.title}</h3>
+                                {/* Content is now scrollable for long text instead of clamped */}
+                                <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-zinc-300 mt-1 max-h-[100px] overflow-y-auto pr-2">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{ann.content}</ReactMarkdown>
+                                </div>
                                 {ann.attachment && <AttachmentCard attachment={ann.attachment} isCompact={true} />}
-                                <div className="mt-3 text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(ann.createdAt)}</div>
+                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-amber-500/10">
+                                    <span className="text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(ann.createdAt)}</span>
+                                </div>
                             </div>
                         </article>
                     ))}
@@ -321,14 +273,7 @@ function PinnedCarousel({ announcements }: { announcements: Announcement[] }) {
             {announcements.length > 1 && (
                 <div className="flex justify-center gap-2 mt-4">
                     {announcements.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => handleIndicatorClick(index)}
-                            className={`h-2 w-6 rounded-full transition-colors ${
-                                index === currentIndex ? 'bg-amber-500' : 'bg-gray-300 dark:bg-zinc-700'
-                            }`}
-                            aria-label={`Go to pinned item ${index + 1}`}
-                        />
+                        <button key={index} onClick={() => handleInteraction(() => setCurrentIndex(index))} className={`h-2 w-6 rounded-full transition-colors ${index === currentIndex ? 'bg-amber-500' : 'bg-gray-300 dark:bg-zinc-700'}`} aria-label={`Go to pinned item ${index + 1}`} />
                     ))}
                 </div>
             )}
@@ -349,18 +294,14 @@ export default function Announcements({ announcements, isLoading }: { announceme
             if (mostRecentTime > latestAnnouncementTime) {
                 setLatestAnnouncementTime(mostRecentTime);
                 const newestAnn = announcements.find(a => a.createdAt?.seconds === mostRecentTime);
-                if (newestAnn) {
-                    setExpandedCards(new Set([newestAnn.id]));
-                }
+                if (newestAnn) setExpandedCards(new Set([newestAnn.id]));
             } else if (expandedCards.size === 0 && latestAnnouncementTime === 0 && !isLoading) {
                 setLatestAnnouncementTime(mostRecentTime);
                 const newestAnn = announcements.find(a => a.createdAt?.seconds === mostRecentTime);
-                if (newestAnn) {
-                    setExpandedCards(new Set([newestAnn.id]));
-                }
+                if (newestAnn) setExpandedCards(new Set([newestAnn.id]));
             }
         }
-    }, [announcements, isLoading, latestAnnouncementTime]);
+    }, [announcements, isLoading, latestAnnouncementTime, expandedCards.size]);
 
     const isAnnouncementRecent = (announcement: Announcement): boolean => {
         if (!announcement.createdAt) return false;
@@ -373,6 +314,21 @@ export default function Announcements({ announcements, isLoading }: { announceme
             newSet.has(announcementId) ? newSet.delete(announcementId) : newSet.add(announcementId);
             return newSet;
         });
+    };
+
+    // ✨ NEW: Handler to expand a card in the main feed and scroll to it.
+    const handleViewDetails = (announcementId: string) => {
+        // First, ensure the card is expanded
+        setExpandedCards(prev => {
+            const newSet = new Set(prev);
+            newSet.add(announcementId);
+            return newSet;
+        });
+
+        // Then, scroll to it. Use a short timeout to ensure the element is rendered and expanded.
+        setTimeout(() => {
+            document.getElementById(announcementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     };
 
     const liveAnnouncements = announcements.filter(a => !a.isPinned).filter(a =>
@@ -388,7 +344,7 @@ export default function Announcements({ announcements, isLoading }: { announceme
 
     return (
         <>
-            <PinnedCarousel announcements={pinnedAnnouncements} />
+            <PinnedCarousel announcements={pinnedAnnouncements} onViewDetails={handleViewDetails} />
             <div className="scroll-mt-24">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2">
@@ -407,13 +363,15 @@ export default function Announcements({ announcements, isLoading }: { announceme
                 {liveAnnouncements.length > 0 ? (
                     <div className="space-y-4">
                         {liveAnnouncements.map((ann) => (
-                            <CompactAnnouncementCard
-                                key={ann.id}
-                                announcement={ann}
-                                isRecent={isAnnouncementRecent(ann)}
-                                isExpanded={expandedCards.has(ann.id)}
-                                onToggleExpanded={() => handleToggleExpanded(ann.id)}
-                            />
+                            // ✨ NEW: Added a wrapper div with the announcement ID for scrolling
+                            <div key={ann.id} id={ann.id} className="scroll-mt-20">
+                                <CompactAnnouncementCard
+                                    announcement={ann}
+                                    isRecent={isAnnouncementRecent(ann)}
+                                    isExpanded={expandedCards.has(ann.id)}
+                                    onToggleExpanded={() => handleToggleExpanded(ann.id)}
+                                />
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -432,6 +390,20 @@ export default function Announcements({ announcements, isLoading }: { announceme
                 @keyframes pulse-border {
                     0%, 100% { border-color: rgba(99, 102, 241, 0.3); }
                     50% { border-color: rgba(99, 102, 241, 0.7); }
+                }
+                /* Simple custom scrollbar for webkit browsers */
+                .prose ::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .prose ::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .prose ::-webkit-scrollbar-thumb {
+                    background: #ccc;
+                    border-radius: 10px;
+                }
+                .dark .prose ::-webkit-scrollbar-thumb {
+                    background: #444;
                 }
             `}</style>
         </>
