@@ -22,7 +22,7 @@ function getEventDuration(start: Date, end: Date): string {
     return '';
 }
 
-// --- DateTimeDisplay Component (Unchanged) ---
+// --- DateTimeDisplay Component (Updated) ---
 function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: Date | null }) {
     if (startsAt && endsAt) {
         const isSameDay = startsAt.toLocaleDateString() === endsAt.toLocaleDateString();
@@ -47,7 +47,8 @@ function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: 
                 </div>
             );
         }
-        const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'short' };
+        // ✨ FIX: Changed 'short' to 'long' for consistency
+        const fullOptions: Intl.DateTimeFormatOptions = { ...dateOptions, ...timeOptions, timeZoneName: 'long' };
         return (
             <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
                 <div className="text-center sm:text-left">
@@ -64,12 +65,16 @@ function DateTimeDisplay({ startsAt, endsAt }: { startsAt: Date | null, endsAt: 
     if (startsAt) {
         const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
         const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        // ✨ ADDED: Get timezone name to display it
+        const timeZoneName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' }).formatToParts(startsAt).find(part => part.type === 'timeZoneName')?.value;
         return (
             <div className="text-center">
                 <p className="text-lg font-bold text-gray-900 dark:text-zinc-100">{startsAt.toLocaleDateString(undefined, dateOptions)}</p>
                 <p className="mt-2 text-2xl font-medium text-blue-600 dark:text-blue-400">
                     From {startsAt.toLocaleTimeString(undefined, timeOptions)} onwards
                 </p>
+                {/* ✨ ADDED: Display the timezone */}
+                <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">{timeZoneName}</p>
             </div>
         );
     }
@@ -95,7 +100,6 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
     return (
         <div className="mb-12 rounded-2xl bg-white ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
             <div className="p-6">
-                {/* ✨ FIX 1: Improved layout for title and status badge */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100 sm:text-4xl">
                         {event.title}
@@ -112,7 +116,6 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                     </div>
                 )}
 
-                {/* ✨ FIX 2: Notification button moved here to be always visible */}
                 <div className="mt-6">
                     <NotificationButton eventId={eventId} />
                 </div>
@@ -131,7 +134,6 @@ export default function EventHeader({ event, eventId }: { event: Event, eventId:
                             <div>
                                 <h2 className="text-sm font-semibold text-gray-500 dark:text-zinc-400">About this Event</h2>
                                 <p className="mt-2 text-base text-gray-700 dark:text-zinc-300">{event.description || 'No description provided.'}</p>
-                                {/* The notification button was moved from here */}
                             </div>
                             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-zinc-800">
                                 <DateTimeDisplay startsAt={startsDate} endsAt={endsDate} />
