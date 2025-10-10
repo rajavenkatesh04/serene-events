@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { WifiIcon, SignalIcon, SignalSlashIcon } from '@heroicons/react/24/solid';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { WifiIcon, SignalIcon, SignalSlashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 
+// --- Type Definitions ---
 type NetworkQuality = 'excellent' | 'good' | 'poor' | 'offline';
 
 interface NetworkStatus {
     isOnline: boolean;
     quality: NetworkQuality;
+    message: string;
     downlink?: number;
     effectiveType?: string;
     rtt?: number;
@@ -28,173 +30,188 @@ interface NavigatorWithConnection extends Navigator {
     webkitConnection?: NetworkInformation;
 }
 
+// --- Main Component ---
 export default function NetworkStatusIndicator() {
     const [status, setStatus] = useState<NetworkStatus>({
         isOnline: true,
-        quality: 'excellent'
+        quality: 'excellent',
+        message: 'Connected',
     });
-    const [showIndicator, setShowIndicator] = useState(false);
-    const [isSliding, setIsSliding] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
-    // Function to determine network quality based on connection info
-    const getNetworkQuality = useCallback((connection: NetworkInformation | undefined): NetworkQuality => {
+    // useRef to track the previous network state to show contextual messages
+    const prevStatusRef = useRef<NetworkStatus>(status);
+    const hideTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+    /**
+     * Determines network quality based on the Network Information API.
+     */
+    const getNetworkQuality = useCallback((connection?: NetworkInformation): NetworkQuality => {
         if (!navigator.onLine) return 'offline';
-
-        if (!connection) return 'good';
+        if (!connection) return 'good'; // Default if API is not supported
 
         const { effectiveType, downlink, rtt } = connection;
 
-        // Excellent: 4g with good speed and low latency
         if (effectiveType === '4g' && downlink && downlink > 5 && rtt && rtt < 100) {
             return 'excellent';
         }
-
-        // Good: 4g or 3g with decent speed
-        if ((effectiveType === '4g' || effectiveType === '3g') && downlink && downlink > 1) {
+        if ((effectiveType === '4g' || effectiveType === '3g') && downlink && downlink > 1.5) {
             return 'good';
         }
-
-        // Poor: slow connection or 2g
-        if (effectiveType === '2g' || effectiveType === 'slow-2g' || (downlink && downlink < 1) || (rtt && rtt > 300)) {
+        if (effectiveType?.includes('2g') || (downlink && downlink < 0.5) || (rtt && rtt > 500)) {
             return 'poor';
         }
-
-        return 'good';
+        return 'good'; // Fallback
     }, []);
 
-    // Function to update network status
+    /**
+     * Shows the indicator banner and sets a timeout to hide it automatically.
+     */
+    const showIndicator = (duration: number = 4000) => {
+        clearTimeout(hideTimeoutRef.current);
+        setIsVisible(true);
+        hideTimeoutRef.current = setTimeout(() => {
+            setIsVisible(false);
+        }, duration);
+    };
+
+    const hideIndicator = () => {
+        clearTimeout(hideTimeoutRef.current);
+        setIsVisible(false);
+    }
+
+    /**
+     * Core function to update the network status state.
+     * It intelligently sets messages based on the transition from the previous state.
+     */
     const updateNetworkStatus = useCallback(() => {
         const nav = navigator as NavigatorWithConnection;
         const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
+        const prevStatus = prevStatusRef.current;
 
+        const isOnline = navigator.onLine;
         const quality = getNetworkQuality(connection);
+
+        let message = '';
+        let shouldShowIndicator = false;
+        let duration = 4000;
+
+        if (!isOnline) {
+            message = 'No internet connection. Trying to reconnect...';
+            // Show indicator persistently when offline
+            shouldShowIndicator = true;
+        } else {
+            // Check if we just came back online
+            if (!prevStatus.isOnline && isOnline) {
+                message = "You're back online! 🎉";
+                shouldShowIndicator = true;
+                duration = 3000;
+            } else {
+                switch (quality) {
+                    case 'excellent':
+                        // Only show a message if we improved from poor
+                        if (prevStatus.quality === 'poor') {
+                            message = 'Connection is stable again.';
+                            shouldShowIndicator = true;
+                        } else {
+                            message = 'Excellent connection';
+                        }
+                        break;
+                    case 'good':
+                        message = 'Good connection';
+                        break;
+                    case 'poor':
+                        // Show indicator only if the state changed to poor
+                        if (prevStatus.quality !== 'poor') {
+                            message = 'Connection is unstable. You may experience issues.';
+                            shouldShowIndicator = true;
+                            duration = 5000;
+                        } else {
+                            message = 'Connection remains unstable.';
+                        }
+                        break;
+                }
+            }
+        }
+
         const newStatus: NetworkStatus = {
-            isOnline: navigator.onLine,
-            quality,
+            isOnline,
+            quality: isOnline ? quality : 'offline',
+            message,
             downlink: connection?.downlink,
             effectiveType: connection?.effectiveType,
             rtt: connection?.rtt
         };
 
         setStatus(newStatus);
-        return newStatus;
-    }, [getNetworkQuality]);
 
-    // Show indicator with animation
-    const showIndicatorWithAnimation = useCallback((duration = 4000) => {
-        setShowIndicator(true);
-        setIsSliding(true);
-
-        setTimeout(() => {
-            setIsSliding(false);
-            setTimeout(() => setShowIndicator(false), 300);
-        }, duration);
-    }, []);
-
-    useEffect(() => {
-        // Initial status check
-        const initialStatus = updateNetworkStatus();
-
-        // Show indicator if starting offline or with poor connection
-        if (!initialStatus.isOnline || initialStatus.quality === 'poor') {
-            setShowIndicator(true);
+        // Only show indicator if there's a meaningful change
+        if (shouldShowIndicator) {
+            // For offline, duration is infinite until reconnected
+            if (!isOnline) {
+                setIsVisible(true);
+                clearTimeout(hideTimeoutRef.current);
+            } else {
+                showIndicator(duration);
+            }
         }
 
-        // Online/Offline handlers
-        const handleOnline = () => {
+        // Update the ref to the new state for the next check
+        prevStatusRef.current = newStatus;
+
+    }, [getNetworkQuality]);
+
+
+    useEffect(() => {
+        // Set initial status without showing the indicator unless offline
+        if (!navigator.onLine) {
             updateNetworkStatus();
-            showIndicatorWithAnimation(3000);
-        };
+        }
 
-        const handleOffline = () => {
-            updateNetworkStatus();
-            setShowIndicator(true);
-        };
+        // Add event listeners for online/offline changes
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
 
-        // Network change handler
-        const handleConnectionChange = () => {
-            const newStatus = updateNetworkStatus();
-
-            // Only show indicator for significant changes (poor quality or offline)
-            if (newStatus.quality === 'poor' || !newStatus.isOnline) {
-                showIndicatorWithAnimation(5000);
-            }
-        };
-
-        // Add event listeners
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
+        // Add event listener for network quality changes
         const nav = navigator as NavigatorWithConnection;
         const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
         if (connection) {
-            connection.addEventListener('change', handleConnectionChange);
+            connection.addEventListener('change', updateNetworkStatus);
         }
 
-        // Periodic check for network quality (every 30 seconds)
-        const intervalId = setInterval(() => {
-            const newStatus = updateNetworkStatus();
-            if (newStatus.quality === 'poor') {
-                showIndicatorWithAnimation(4000);
-            }
-        }, 30000);
-
-        // Cleanup
+        // Cleanup function to remove listeners
         return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('online', updateNetworkStatus);
+            window.removeEventListener('offline', updateNetworkStatus);
             if (connection) {
-                connection.removeEventListener('change', handleConnectionChange);
+                connection.removeEventListener('change', updateNetworkStatus);
             }
-            clearInterval(intervalId);
+            clearTimeout(hideTimeoutRef.current);
         };
-    }, [updateNetworkStatus, showIndicatorWithAnimation]);
+    }, [updateNetworkStatus]);
 
-    // Don't render if indicator is hidden
-    if (!showIndicator) {
-        return null;
-    }
+    // --- Render Logic ---
 
-    // Get colors and message based on status
     const getStatusConfig = () => {
-        if (!status.isOnline) {
+        const { quality, isOnline } = status;
+
+        if (!isOnline) {
             return {
-                bg: 'bg-slate-900',
+                bg: 'bg-slate-800',
                 icon: SignalSlashIcon,
-                message: 'No internet connection',
-                showDetails: false
+                showDetails: false,
             };
         }
 
-        switch (status.quality) {
+        switch (quality) {
             case 'excellent':
-                return {
-                    bg: 'bg-emerald-600',
-                    icon: WifiIcon,
-                    message: 'Connected',
-                    showDetails: true
-                };
+                return { bg: 'bg-emerald-600', icon: WifiIcon, showDetails: true };
             case 'good':
-                return {
-                    bg: 'bg-blue-600',
-                    icon: SignalIcon,
-                    message: 'Good connection',
-                    showDetails: true
-                };
+                return { bg: 'bg-blue-600', icon: SignalIcon, showDetails: true };
             case 'poor':
-                return {
-                    bg: 'bg-amber-600',
-                    icon: SignalSlashIcon,
-                    message: 'Slow connection',
-                    showDetails: true
-                };
+                return { bg: 'bg-amber-600', icon: ExclamationTriangleIcon, showDetails: true };
             default:
-                return {
-                    bg: 'bg-slate-700',
-                    icon: WifiIcon,
-                    message: 'Connected',
-                    showDetails: false
-                };
+                return { bg: 'bg-slate-700', icon: WifiIcon, showDetails: false };
         }
     };
 
@@ -203,35 +220,33 @@ export default function NetworkStatusIndicator() {
 
     return (
         <div
-            className={`fixed left-0 right-0 top-0 z-[9999] transition-all duration-300 ${
-                isSliding ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+            // Animate slide-down and fade-in
+            className={`fixed left-0 right-0 top-0 z-[9999] transition-all duration-300 ease-in-out ${
+                isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
             }`}
         >
-            <div className={`${config.bg} px-4 py-2 shadow-lg`}>
+            <div className={`${config.bg} px-4 py-2.5 shadow-lg`}>
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-1 items-center gap-3">
                         <Icon className="h-5 w-5 flex-shrink-0 text-white" />
-                        <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-white">
-                {config.message}
-              </span>
-
-                            {config.showDetails && status.effectiveType && (
-                                <span className="hidden text-xs text-white/80 sm:inline">
-                  {status.effectiveType.toUpperCase()}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                            <span className="text-sm font-medium text-white">
+                                {status.message}
+                            </span>
+                            {config.showDetails && status.isOnline && (
+                                <span className="hidden text-xs text-white/70 sm:inline">
+                                    {status.effectiveType?.toUpperCase()}
                                     {status.downlink && ` • ${status.downlink.toFixed(1)} Mbps`}
                                     {status.rtt && ` • ${status.rtt}ms`}
-                </span>
+                                </span>
                             )}
                         </div>
                     </div>
 
+                    {/* Close Button */}
                     <button
-                        onClick={() => {
-                            setIsSliding(false);
-                            setTimeout(() => setShowIndicator(false), 300);
-                        }}
-                        className="flex-shrink-0 text-white/80 transition-colors hover:text-white"
+                        onClick={hideIndicator}
+                        className="-m-1 flex-shrink-0 rounded-full p-1 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                         aria-label="Dismiss"
                     >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,12 +256,16 @@ export default function NetworkStatusIndicator() {
                 </div>
             </div>
 
-            {/* Progress bar for auto-dismiss */}
-            {isSliding && status.isOnline && (
+            {/* Progress bar for auto-dismiss (only shown when online) */}
+            {isVisible && status.isOnline && (
                 <div className="h-0.5 w-full bg-white/20">
                     <div
-                        className="h-full bg-white/40 transition-all duration-[4000ms] ease-linear"
-                        style={{ width: isSliding ? '0%' : '100%' }}
+                        key={status.message} // Re-trigger animation on message change
+                        className="h-full bg-white/40"
+                        style={{
+                            transition: 'width 4s linear',
+                            width: '0%',  // ✅ Single width property
+                        }}
                     />
                 </div>
             )}

@@ -38,8 +38,10 @@ export default async function EventLayout({children, params}: {
             <EventContextProvider value={{ eventPath }}>
                 <div className="bg-slate-50 text-slate-800 dark:bg-zinc-950 dark:text-slate-200">
                     <Toaster position="top-center" reverseOrder={false} />
-                    <NetworkStatusIndicator />
+
                     <Navbar />
+
+                    <NetworkStatusIndicator />
 
                     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
                         <EventHeader event={initialEvent} eventId={resolvedParams.id} />
