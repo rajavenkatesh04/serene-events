@@ -260,11 +260,11 @@ export default function NetworkStatusIndicator() {
             {isVisible && status.isOnline && (
                 <div className="h-0.5 w-full bg-white/20">
                     <div
-                        key={status.message} // Re-trigger animation on message change
+                        key={status.message}
                         className="h-full bg-white/40"
                         style={{
                             transition: 'width 4s linear',
-                            width: '0%',  // ✅ Single width property
+                            width: '0%',
                         }}
                     />
                 </div>
