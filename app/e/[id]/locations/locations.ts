@@ -2,7 +2,7 @@
 
 export interface Location {
     id: number;
-    category: 'Registration & Robes' | 'Lunch' | 'Parking' | 'Parents Accommodation' | 'Robe Return';
+    category: 'Registration & Robes' | 'Seating Plan' | 'Lunch' | 'Parking' | 'Parents Accommodation' | 'Robe Return';
     title: string;
     details: string;
     mapUrl: string;
@@ -163,7 +163,18 @@ export const eventLocations: Location[] = [
         mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
         latitude: 12.8255,
         longitude: 80.0401,
-    }
+    },
+
+    //Seating plan venues
+    {
+        id: 16,
+        category: 'Seating Plan',
+        title: 'Dr. T.P Ganesan Auditorium',
+        details: 'more locations will be added soon',
+        mapUrl: 'https://maps.app.goo.gl/PjUThgaPY7DY3NcG9',
+        latitude: 12.824976330413575,
+        longitude: 80.04667526762744,
+    },
 ];
 
 // Helper function to get locations by category
@@ -179,6 +190,7 @@ export const getLocationById = (id: number): Location | undefined => {
 // All categories for filtering
 export const locationCategories: Location['category'][] = [
     'Registration & Robes',
+    'Seating Plan',
     'Lunch',
     'Parking',
     'Parents Accommodation',

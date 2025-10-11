@@ -87,7 +87,7 @@ function AttachmentCard({ attachment }: { attachment: AttachmentItem; }) {
                 )}
             </div>
             <div className="flex-1 min-w-0">
-                <p className=" truncate text-sm font-medium text-gray-800 dark:text-zinc-200" title={attachment.name}>
+                <p className="  text-sm font-medium text-gray-800 dark:text-zinc-200" title={attachment.name}>
                     {attachment.name}
                 </p>
             </div>
@@ -321,12 +321,6 @@ function PinnedAnnouncementItem({ announcement, onViewDetails }: { announcement:
 
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-amber-500/10">
                     <span className="text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(announcement.createdAt)}</span>
-                    <button
-                        onClick={() => onViewDetails(announcement.id)}
-                        className="text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400"
-                    >
-                        View Details
-                    </button>
                 </div>
             </div>
         </article>
