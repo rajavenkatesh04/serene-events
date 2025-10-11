@@ -1,12 +1,12 @@
 'use client';
 
-import { useActionState, useEffect, useState, useRef, useTransition } from 'react';
+import { useActionState, useEffect, useState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createAnnouncement, CreateAnnouncementState, deleteAnnouncement } from '@/app/lib/actions/eventActions';
 import { db, storage } from '@/app/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { Announcement } from '@/app/lib/definitions';
+import { Announcement } from '@/app/lib/definitions'; // Assumes Attachment is now Attachment[]
 import {
     UserCircleIcon,
     CalendarIcon,
@@ -48,7 +48,7 @@ function AttachmentButton({ onClick }: { onClick: () => void }) {
     return (
         <button type="button" onClick={onClick} className="flex items-center gap-2 rounded-md p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
             <PaperClipIcon className="h-5 w-5" />
-            <span>Attach File</span>
+            <span>Attach Files</span>
         </button>
     );
 }
@@ -123,7 +123,10 @@ function AnnouncementMap({ location }: { location: Announcement['location'] }) {
     );
 }
 
-function AttachmentPreviewModal({ attachment, onClose }: { attachment: Announcement['attachment']; onClose: () => void; }) {
+// ✨ NOTE: The Attachment type is assumed to be defined in your definitions file
+// as { url: string; path: string; name: string; type: string; }
+// The Announcement type should now have `attachments?: Attachment[]`
+function AttachmentPreviewModal({ attachment, onClose }: { attachment: NonNullable<Announcement['attachments']>[0]; onClose: () => void; }) {
     if (!attachment) return null;
 
     const isImage = attachment.type.startsWith('image/');
@@ -176,52 +179,77 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const initialState: CreateAnnouncementState = { message: null, errors: {} };
     const [state, dispatch] = useActionState(createAnnouncement, initialState);
-    const [isTransitioning, startTransition] = useTransition();
+
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<Announcement['location'] | null>(null);
-    const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+
+    // ✨ MODIFIED: State for handling multiple files
+    const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
-    const [attachmentToPreview, setAttachmentToPreview] = useState<Announcement['attachment'] | null>(null);
+    const [attachmentToPreview, setAttachmentToPreview] = useState<NonNullable<Announcement['attachments']>[0] | null>(null);
     const [content, setContent] = useState('');
+    const MAX_FILES = 50;
 
-    const handleFormSubmit = (formData: FormData) => {
-        if (fileToUpload) {
+    const handleFormSubmit = async (formData: FormData) => {
+        if (filesToUpload.length > 0) {
             setIsUploading(true);
-            const filePath = `events/${eventId}/attachments/${Date.now()}_${fileToUpload.name}`;
-            const storageRef = ref(storage, filePath);
-            const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+            setUploadProgress(0);
 
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error("Upload failed:", error);
-                    setIsUploading(false);
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        const attachmentData = {
-                            url: downloadURL,
-                            path: filePath,
-                            name: fileToUpload.name,
-                            type: fileToUpload.type,
-                        };
-                        formData.append('attachment', JSON.stringify(attachmentData));
-                        startTransition(() => {
-                            dispatch(formData);
-                        });
-                    });
-                }
-            );
-        } else {
-            startTransition(() => {
-                dispatch(formData);
+            const uploadPromises = filesToUpload.map(file => {
+                return new Promise((resolve, reject) => {
+                    const filePath = `events/${eventId}/attachments/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, filePath);
+                    const uploadTask = uploadBytesResumable(storageRef, file);
+
+                    uploadTask.on('state_changed',
+                        () => {}, // Progress can be tracked here individually if needed
+                        (error) => reject(error),
+                        async () => {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve({
+                                url: downloadURL,
+                                path: filePath,
+                                name: file.name,
+                                type: file.type,
+                            });
+                        }
+                    );
+                });
             });
+
+            try {
+                // ✨ MODIFIED: Upload all files in parallel
+                const attachmentsData = await Promise.all(uploadPromises);
+                formData.append('attachments', JSON.stringify(attachmentsData));
+                dispatch(formData);
+            } catch (error) {
+                console.error("Upload failed:", error);
+                // Handle upload error state for the user
+                setIsUploading(false);
+            }
+
+        } else {
+            dispatch(formData);
         }
     };
+
+    // ✨ NEW: Handler for file selection and removal
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            if (filesToUpload.length + newFiles.length > MAX_FILES) {
+                alert(`You can only upload a maximum of ${MAX_FILES} files.`);
+                return;
+            }
+            setFilesToUpload(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const removeFile = (fileIndex: number) => {
+        setFilesToUpload(prev => prev.filter((_, index) => index !== fileIndex));
+    };
+
 
     useEffect(() => {
         const q = query(
@@ -244,11 +272,12 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
     }, [eventId, orgId]);
 
     useEffect(() => {
+        // ✨ MODIFIED: Reset logic for multiple files
         if (state.message?.startsWith('Successfully')) {
             formRef.current?.reset();
             setContent('');
             setSelectedLocation(null);
-            setFileToUpload(null);
+            setFilesToUpload([]);
             setUploadProgress(0);
             setIsUploading(false);
             if(fileInputRef.current) fileInputRef.current.value = "";
@@ -294,7 +323,8 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                     </div>
 
                     {selectedLocation && <input type="hidden" name="location" value={JSON.stringify(selectedLocation)} />}
-                    <input type="file" ref={fileInputRef} onChange={(e) => setFileToUpload(e.target.files ? e.target.files[0] : null)} className="hidden" />
+                    {/* ✨ MODIFIED: Added `multiple` attribute to file input */}
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple className="hidden" />
 
                     <div className='space-y-4 my-4'>
                         {selectedLocation && (
@@ -303,14 +333,20 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                             </div>
                         )}
 
-                        {fileToUpload && (
-                            <div className="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium text-gray-700 dark:text-zinc-300 truncate">{fileToUpload.name}</p>
-                                    <button type="button" onClick={() => { setFileToUpload(null); if(fileInputRef.current) fileInputRef.current.value = ""; }} className="p-1 text-gray-400 hover:text-red-500">
-                                        <XCircleIcon className="h-5 w-5" />
-                                    </button>
-                                </div>
+                        {/* ✨ MODIFIED: UI to display list of files to be uploaded */}
+                        {filesToUpload.length > 0 && (
+                            <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                <p className="text-sm font-medium text-gray-800 dark:text-zinc-200 mb-2">Attachments ({filesToUpload.length}/{MAX_FILES})</p>
+                                <ul className='space-y-2'>
+                                    {filesToUpload.map((file, index) => (
+                                        <li key={index} className="flex items-center justify-between text-sm">
+                                            <p className="font-medium text-gray-700 dark:text-zinc-300 truncate">{file.name}</p>
+                                            <button type="button" onClick={() => removeFile(index)} className="p-1 text-gray-400 hover:text-red-500">
+                                                <XCircleIcon className="h-5 w-5" />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
                                 {isUploading && uploadProgress > 0 && uploadProgress < 100 && (
                                     <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-zinc-700">
                                         <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
@@ -371,25 +407,28 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                                         </form>
                                     </div>
 
-                                    {ann.attachment && (
-                                        <div className="mt-4">
-                                            <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                                                <PaperClipIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                                                <span className="text-sm font-medium text-gray-800 dark:text-zinc-200 truncate flex-1">{ann.attachment.name}</span>
-                                                <div className="flex items-center gap-2 flex-shrink-0">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setAttachmentToPreview(ann.attachment)}
-                                                        className="p-1 text-gray-500 hover:text-blue-600"
-                                                        aria-label="Preview attachment"
-                                                    >
-                                                        <EyeIcon className="h-5 w-5" />
-                                                    </button>
-                                                    <a href={ann.attachment.url} download={ann.attachment.name} className="p-1 text-gray-500 hover:text-blue-600" aria-label="Download attachment">
-                                                        <ArrowDownTrayIcon className="h-5 w-5" />
-                                                    </a>
+                                    {/* ✨ MODIFIED: Render list of attachments for existing announcements */}
+                                    {ann.attachments && ann.attachments.length > 0 && (
+                                        <div className="mt-4 space-y-2">
+                                            {ann.attachments.map((attachment, index) => (
+                                                <div key={index} className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                                    <PaperClipIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                                                    <span className="text-sm font-medium text-gray-800 dark:text-zinc-200 truncate flex-1">{attachment.name}</span>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAttachmentToPreview(attachment)}
+                                                            className="p-1 text-gray-500 hover:text-blue-600"
+                                                            aria-label="Preview attachment"
+                                                        >
+                                                            <EyeIcon className="h-5 w-5" />
+                                                        </button>
+                                                        <a href={attachment.url} download={attachment.name} className="p-1 text-gray-500 hover:text-blue-600" aria-label="Download attachment">
+                                                            <ArrowDownTrayIcon className="h-5 w-5" />
+                                                        </a>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            ))}
                                         </div>
                                     )}
 
@@ -408,7 +447,7 @@ export default function AnnouncementsTab({ eventId, orgId }: { eventId: string, 
                                                 </Map>
                                             </div>
                                             <a
-                                                href={`http://googleusercontent.com/maps/google.com/6{ann.location.center.lat},${ann.location.center.lng}`}
+                                                href={`https://www.google.com/maps/search/?api=1&query=${ann.location.center.lat},${ann.location.center.lng}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"

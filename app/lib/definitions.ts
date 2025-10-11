@@ -73,12 +73,14 @@ export type Announcement = {
     } | null;
 
     // --- NEW FIELD for attachments ---
-    attachment: {
-        url: string;      // The public URL to view/download the file
-        path: string;     // The full path in Firebase Storage (e.g., "events/eventId/attachments/file.pdf")
-        name: string;     // The original name of the file (e.g., "event-schedule.pdf")
-        type: string;     // The file's MIME type (e.g., "application/pdf")
-    } | null;
+    attachments: AttachmentItem[] | null;
+};
+
+export type AttachmentItem = {
+    url: string;      // The public URL to view/download the file
+    path: string;     // The full path in Firebase Storage
+    name: string;     // The original name of the file
+    type: string;     // The file's MIME type
 };
 
 export type Invitation = {

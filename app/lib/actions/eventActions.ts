@@ -8,6 +8,7 @@ import { Timestamp, FieldValue, DocumentSnapshot  } from 'firebase-admin/firesto
 import { redirect } from 'next/navigation';
 import { revalidateTag , revalidatePath } from 'next/cache';
 import { Message } from 'firebase-admin/messaging';
+import {AttachmentItem} from "@/app/lib/definitions";
 
 
 // =================================================================================
@@ -257,13 +258,14 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
     const session = await adminAuth.getSession();
     if (!session?.uid) return { message: "Authentication error." };
 
+    // ✨ MODIFIED: Changed `attachment` to `attachments`
     const CreateAnnouncementSchema = z.object({
         title: z.string().min(1),
         content: z.string().min(1),
         eventId: z.string(),
         isPinned: z.preprocess((v) => v === 'on', z.boolean()),
         location: z.string().optional(),
-        attachment: z.string().optional(),
+        attachments: z.string().optional(), // Expects a JSON string of an array
     });
 
     const validatedFields = CreateAnnouncementSchema.safeParse(Object.fromEntries(formData));
@@ -275,25 +277,24 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
         };
     }
 
-    const { title: announcementTitle, content, eventId, isPinned, location: locationJson, attachment: attachmentJson } = validatedFields.data;
+    const { title: announcementTitle, content, eventId, isPinned, location: locationJson, attachments: attachmentsJson } = validatedFields.data;
 
     let locationData = null;
     if (locationJson) {
         try {
             locationData = JSON.parse(locationJson);
         } catch {
-            // Fixed: Removed unused 'e' variable that was causing a warning
             return { message: "Invalid location data format." };
         }
     }
 
-    let attachmentData = null;
-    if (attachmentJson) {
+    // ✨ MODIFIED: Parse the JSON string for multiple attachments
+    let attachmentsData = null;
+    if (attachmentsJson) {
         try {
-            attachmentData = JSON.parse(attachmentJson);
+            attachmentsData = JSON.parse(attachmentsJson);
         } catch {
-            // Fixed: Removed unused 'e' variable that was causing a warning
-            return { message: "Invalid attachment data format." };
+            return { message: "Invalid attachments data format." };
         }
     }
 
@@ -310,7 +311,7 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
             content: content,
             isPinned: isPinned,
             location: locationData,
-            attachment: attachmentData,
+            attachments: attachmentsData, // Save the array of attachment objects
             createdAt: Timestamp.now(),
         });
 
@@ -323,20 +324,9 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
                 body: announcementTitle,
                 url: `${baseUrl}/e/${eventId}`
             },
-            android: {
-                priority: 'high' as const,
-            },
-            apns: {
-                headers: {
-                    'apns-push-type': 'alert',
-                    'apns-priority': '10',
-                },
-            },
-            webpush: {
-                headers: {
-                    'Urgency': 'high',
-                },
-            },
+            android: { priority: 'high' as const, },
+            apns: { headers: { 'apns-push-type': 'alert', 'apns-priority': '10', }, },
+            webpush: { headers: { 'Urgency': 'high', }, },
         };
         await adminMessaging.send(messagePayload);
 
@@ -367,34 +357,31 @@ export async function deleteAnnouncement(formData: FormData) {
             throw new Error("Announcement not found.");
         }
 
-
         const announcementData = announcementDoc.data();
 
-        // This is the defensive programming approach - always verify data exists
-        // before trying to access its properties
-        if (announcementData && announcementData.attachment && announcementData.attachment.path) {
-            try {
-                await adminStorage.bucket().file(announcementData.attachment.path).delete();
-                console.log(`Successfully deleted attachment: ${announcementData.attachment.path}`);
-            } catch (storageError) {
-                console.error("Failed to delete attachment from Storage:", storageError);
-                // Note: We don't throw here because we still want to delete the announcement
-                // even if the file deletion fails
-            }
+        // ✨ MODIFIED: Logic to delete multiple attachments from storage
+        if (announcementData && Array.isArray(announcementData.attachments)) {
+            const deletePromises = announcementData.attachments.map((attachment: AttachmentItem) => {
+                if (attachment && typeof attachment.path === 'string') {
+                    return adminStorage.bucket().file(attachment.path).delete().catch(err => {
+                        // Log errors but don't stop other deletions
+                        console.error(`Failed to delete attachment ${attachment.path}:`, err);
+                    });
+                }
+                return Promise.resolve();
+            });
+            await Promise.all(deletePromises);
         }
 
-        // Delete the announcement document regardless of attachment deletion success
         await announcementRef.delete();
 
         revalidatePath(`/dashboard/events/${eventId}`);
     } catch (error) {
         console.error("Delete Announcement Error:", error);
-
+        // Avoid throwing an error to the client, just log it.
+        // Or handle it with a redirect and a query param error message.
     }
 }
-
-
-
 
 // =================================================================================
 // --- INVITATION ACTIONS ---

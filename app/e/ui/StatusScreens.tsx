@@ -95,13 +95,24 @@ export function ScheduledScreen({ event }: { event: Event }) {
         return <DelayedScreen />;
     }
 
-    const calendarLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startsDate.toISOString().replace(/-|:|\.\d\d\d/g,"")}/${new Date(event.endsAt.seconds * 1000).toISOString().replace(/-|:|\.\d\d\d/g,"")}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.locationText)}`;
+    // --- ✨ THE FIX IS HERE! ✨ ---
+    const formattedStartDate = startsDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+    // Conditionally create the end date part of the URL
+    let formattedEndDate;
+    if (event.endsAt) { // Check if endsAt actually exists!
+        formattedEndDate = new Date(event.endsAt.seconds * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    } else {
+        // If no end date, Google Calendar assumes a 1-hour duration if you use the same start time.
+        formattedEndDate = formattedStartDate;
+    }
+
+    const calendarLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formattedStartDate}/${formattedEndDate}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.locationText)}`;
 
     return (
         <StatusScreenLayout icon={ClockIcon} title="Event Begins Soon" accent="blue">
             <p>This event is scheduled to go live in:</p>
             <CountdownDisplay targetDate={startsDate} />
-            {/* Changed button color to blue for consistency */}
             <a href={calendarLink} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                 <CalendarDaysIcon className="h-5 w-5" />
                 Add to Calendar
