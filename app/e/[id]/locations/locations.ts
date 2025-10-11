@@ -170,10 +170,19 @@ export const eventLocations: Location[] = [
         id: 16,
         category: 'Seating Plan',
         title: 'Dr. T.P Ganesan Auditorium',
-        details: 'more locations will be added soon',
+        details: '& Mini hall 1 , 2',
         mapUrl: 'https://maps.app.goo.gl/PjUThgaPY7DY3NcG9',
         latitude: 12.824976330413575,
         longitude: 80.04667526762744,
+    },
+    {
+        id: 16,
+        category: 'Seating Plan',
+        title: 'SRM Medical College',
+        details: '& Lecture halls - 1,2,3,4',
+        mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
+        latitude: 12.8255,
+        longitude: 80.0401,
     },
 ];
 
