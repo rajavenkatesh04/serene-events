@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Serene Events',
         short_name: 'Serene',
         description: 'Your events companion.',
-        start_url: '/',
+        start_url: '/e/KN_WXA',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000',
