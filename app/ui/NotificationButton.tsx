@@ -6,14 +6,18 @@ import { messaging } from '@/app/lib/firebase';
 import { getToken } from 'firebase/messaging';
 import { subscribeToTopic } from '@/app/lib/actions/eventActions';
 import LoadingSpinner from "@/app/ui/dashboard/loading-spinner";
+import {InformationCircleIcon} from "@heroicons/react/16/solid";
 
 type NotificationStatus = 'loading' | 'subscribed' | 'denied' | 'default' | 'unsupported';
 
-function StatusBadge({ icon: Icon, message, className }: { icon: React.ElementType, message: string, className: string }) {
+function StatusBadge({ icon: Icon, message, className, children }: { icon: React.ElementType, message: string, className: string, children?: React.ReactNode }) {
     return (
-        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${className}`}>
-            <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-            <p className="font-medium">{message}</p>
+        <div className={`rounded-lg px-3 py-2 text-sm ${className}`}>
+            <div className="flex items-center gap-2">
+                <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+                <p className="font-medium">{message}</p>
+            </div>
+            {children}
         </div>
     );
 }
@@ -77,7 +81,21 @@ export default function NotificationButton({ eventId }: { eventId: string }) {
         return <StatusBadge icon={ExclamationTriangleIcon} message="Notification permissions are blocked." className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300" />;
     }
     if (status === 'unsupported') {
-        return <StatusBadge icon={XCircleIcon} message="Notifications are not supported on this browser/device." className="bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300" />;
+        return <StatusBadge
+            icon={InformationCircleIcon}
+            message="Install app to enable notifications"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
+        >
+            <div className="mt-2 text-sm">
+                <p className="font-medium mb-2">To receive notifications on iOS:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Tap the <strong>Share</strong> button <span className="inline-block">⎋</span></li>
+                    <li>Scroll down and select <strong>&quot;Add to Home Screen&ldquo;</strong></li>
+                    <li>Tap <strong>&quot;Add&ldquo;</strong> to install the app</li>
+                    <li>Open the app from your home screen</li>
+                </ol>
+            </div>
+        </StatusBadge>
     }
 
     return (

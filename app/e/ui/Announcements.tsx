@@ -392,10 +392,26 @@ function PinnedCarousel({ announcements, onViewDetails }: { announcements: Annou
 
 // --- MAIN ANNOUNCEMENTS COMPONENT ---
 
-export default function Announcements({ announcements, isLoading }: { announcements: Announcement[]; isLoading: boolean; }) {
+export default function Announcements({ announcements, isLoading, announcementIdFromUrl }: { announcements: Announcement[]; isLoading: boolean; announcementIdFromUrl: string | null; }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
     const [latestAnnouncementTime, setLatestAnnouncementTime] = useState(0);
+
+    // ✨ ADD THIS NEW useEffect TO HANDLE THE SCROLLING
+    useEffect(() => {
+        // Only run if we have an ID from the URL and the data is loaded
+        if (announcementIdFromUrl && !isLoading && announcements.length > 0) {
+            const targetElement = document.getElementById(announcementIdFromUrl);
+
+            if (targetElement) {
+                // Expand the card so the user sees the content
+                setExpandedCards(prev => new Set(prev).add(announcementIdFromUrl));
+                // Scroll to it smoothly
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        // This effect depends on the ID, loading state, and the data itself
+    }, [announcementIdFromUrl, isLoading, announcements]);
 
     useEffect(() => {
         if (announcements.length > 0) {

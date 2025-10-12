@@ -322,7 +322,7 @@ export async function createAnnouncement(prevState: CreateAnnouncementState, for
             data: {
                 title: eventData.title || 'Event Update',
                 body: announcementTitle,
-                url: `${baseUrl}/e/${eventId}`
+                url: `${baseUrl}/e/${eventId}?announcementId=${announcementRef.id}`
             },
             android: { priority: 'high' as const, },
             apns: { headers: { 'apns-push-type': 'alert', 'apns-priority': '10', }, },

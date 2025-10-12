@@ -449,6 +449,7 @@ export async function fetchAllAnnouncementsForEvent(eventPath: string): Promise<
 
 
 
+// No changes needed here, as it just fetches the summary object which was updated on the server-side.
 export async function fetchEventFeedbackSummary(userId: string, eventId: string): Promise<FeedbackSummary | null> {
     noStore();
     try {
@@ -464,6 +465,8 @@ export async function fetchEventFeedbackSummary(userId: string, eventId: string)
     }
 }
 
+
+// ✨ UPDATED: This function now fetches the new feedback fields.
 export async function fetchRecentFeedback(userId: string, eventId: string, limitCount: number = 5): Promise<FeedbackResponse[]> {
     noStore();
     try {
@@ -481,14 +484,18 @@ export async function fetchRecentFeedback(userId: string, eventId: string, limit
             return {
                 id: doc.id,
                 fullName: data.fullName,
-                email: data.email, // Added the missing email field
+                email: data.email,
                 registrationId: data.registrationId,
-                comments: data.comments,
                 submittedAt: serializeTimestamp(data.submittedAt) as FirestoreTimestamp,
-                registrationRating: data.registrationRating,
+
+                // Updated fields to match the new structure
+                overallExperienceRating: data.overallExperienceRating,
                 communicationRating: data.communicationRating,
-                venueRating: data.venueRating,
-                pacingRating: data.pacingRating,
+                lunchRating: data.lunchRating,
+                platformUsefulnessRating: data.platformUsefulnessRating,
+                eventImprovementComments: data.eventImprovementComments,
+                platformImprovementComments: data.platformImprovementComments,
+
             } as FeedbackResponse;
         });
     } catch (error) {
@@ -498,7 +505,7 @@ export async function fetchRecentFeedback(userId: string, eventId: string, limit
 }
 
 
-
+// ✨ UPDATED: This function also now fetches the new feedback fields.
 export async function fetchAllFeedback(userId: string, eventId: string): Promise<FeedbackResponse[]> {
     noStore();
     try {
@@ -521,13 +528,17 @@ export async function fetchAllFeedback(userId: string, eventId: string): Promise
                 fullName: data.fullName,
                 email: data.email,
                 registrationId: data.registrationId,
-                comments: data.comments,
                 submittedAt: serializeTimestamp(data.submittedAt) as FirestoreTimestamp,
-                registrationRating: data.registrationRating,
+
+                // Updated fields to match the new structure
+                overallExperienceRating: data.overallExperienceRating,
                 communicationRating: data.communicationRating,
-                venueRating: data.venueRating,
-                pacingRating: data.pacingRating,
-            } as FeedbackResponse; // Ensure you update the FeedbackResponse type in definitions.ts
+                lunchRating: data.lunchRating,
+                platformUsefulnessRating: data.platformUsefulnessRating,
+                eventImprovementComments: data.eventImprovementComments,
+                platformImprovementComments: data.platformImprovementComments,
+
+            } as FeedbackResponse;
         });
     } catch (error) {
         console.error('Database Error fetching all feedback:', error);

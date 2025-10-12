@@ -5,6 +5,7 @@ import { db } from '@/app/lib/firebase';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { Announcement } from '@/app/lib/definitions';
 import Announcements from '@/app/e/ui/Announcements';
+import { useSearchParams } from 'next/navigation';
 import { useEventContext } from './context';
 
 // Helper to normalize timestamps from Firestore's real-time listener
@@ -38,6 +39,10 @@ export default function AnnouncementsPage() {
     // Use the context to get the eventPath provided by the server layout
     const { eventPath } = useEventContext();
 
+    //Get the search params
+    const searchParams = useSearchParams();
+    const announcementIdFromUrl = searchParams.get('announcementId');
+
     useEffect(() => {
         if (!eventPath) return;
 
@@ -67,6 +72,7 @@ export default function AnnouncementsPage() {
         <Announcements
             announcements={announcements}
             isLoading={isFeedLoading}
+            announcementIdFromUrl={announcementIdFromUrl}
         />
     );
 }

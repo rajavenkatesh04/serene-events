@@ -130,34 +130,39 @@ export interface Message {
 }
 
 
-// Add these new types to your definitions.ts file
-
+// Feedback Summary - FIXED: Use consistent rating types
 export type FeedbackRatingCounts = {
-    Excellent: number;
-    Good: number;
-    Average: number;
-    Poor: number;
+    Excellent?: number;
+    Good?: number;
+    Average?: number;
+    Poor?: number;
+    // Add platform-specific ratings that might get stored
+    VeryUseful?: number;
+    Useful?: number;
+    Neutral?: number;
+    NotUseful?: number;
 };
 
 export type FeedbackSummary = {
     totalResponses: number;
-    registrationRating: FeedbackRatingCounts;
+    overallExperienceRating: FeedbackRatingCounts;
     communicationRating: FeedbackRatingCounts;
-    venueRating: FeedbackRatingCounts;
-    pacingRating: FeedbackRatingCounts;
+    lunchRating: FeedbackRatingCounts;
+    platformUsefulnessRating: FeedbackRatingCounts; // Changed from PlatformRatingCounts
 };
 
-// In app/lib/definitions.ts, update the FeedbackResponse type
 
 export type FeedbackResponse = {
     id: string;
     fullName: string;
     email: string;
     registrationId?: string;
-    comments?: string;
     submittedAt: FirestoreTimestamp;
-    registrationRating?: string;
+    overallExperienceRating?: string;
     communicationRating?: string;
-    venueRating?: string;
-    pacingRating?: string;
+    lunchRating?: string;
+    platformUsefulnessRating?: string;
+    eventImprovementComments?: string;
+    platformImprovementComments?: string;
 };
+

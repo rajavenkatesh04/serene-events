@@ -11,11 +11,10 @@ import LoadingSpinner from '@/app/ui/dashboard/loading-spinner';
 
 // --- Reusable Components ---
 
-// ✨ NEW: Toast/Snackbar component for quick, non-interruptive feedback.
 function Toast({ message, show }: { message: string; show: boolean }) {
     return (
         <div
-            className={`fixed bottom-5 left-1/2 z-50 w-auto -translate-x-1/2 transform rounded-full bg-gray-800 px-5 py-3 text-white shadow-lg transition-all duration-300 ease-in-out dark:bg-zinc-200 dark:text-zinc-800 ${
+            className={`fixed top-5 left-1/2 z-50 w-auto -translate-x-1/2 transform rounded-full bg-gray-800 px-5 py-3 text-white shadow-lg transition-all duration-300 ease-in-out dark:bg-zinc-200 dark:text-zinc-800 ${
                 show ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             } ${!show ? 'pointer-events-none' : ''}`}
         >
@@ -24,12 +23,10 @@ function Toast({ message, show }: { message: string; show: boolean }) {
     );
 }
 
-// ✨ NEW: Success Dialog for the detailed "thank you" message.
 function SuccessDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     if (!isOpen) return null;
 
     return (
-        // ✨ CHANGED: Reduced backdrop opacity for a lighter feel
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 p-4" aria-modal="true">
             <div className="w-full max-w-md transform rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-zinc-900">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-zinc-100">
@@ -37,7 +34,7 @@ function SuccessDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 </h3>
                 <div className="mt-2">
                     <p className="text-sm text-gray-600 dark:text-zinc-400">
-                        Despite our best efforts, we know there&apos;s always room for improvement. Your feedback is invaluable and will help us make the next event even better.
+                        Your feedback is invaluable and will help us make the next event even better. We appreciate you taking the time.
                     </p>
                 </div>
                 <div className="mt-5 sm:mt-6">
@@ -54,9 +51,8 @@ function SuccessDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     );
 }
 
-
-function RatingScale({ label, value, setValue }: { label: string; value: string; setValue: (value: string) => void; }) {
-    const options = ['Excellent', 'Good', 'Average', 'Poor'];
+// ✨ MODIFIED: This component now accepts a custom list of options
+function RatingScale({ label, value, setValue, options }: { label: string; value: string; setValue: (value: string) => void; options: string[] }) {
     return (
         <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-900 dark:text-zinc-200">{label}</label>
@@ -88,20 +84,24 @@ export default function FeedbackPage() {
     const { user } = useAuth();
     const formRef = useRef<HTMLFormElement>(null);
 
+    // ✨ FIXED: Use a key to force re-render and reset form state
+    const [formKey, setFormKey] = useState(0);
+
     const initialState: SubmitFeedbackState = { message: null, errors: {}, isSuccess: false };
     const [state, formAction] = useActionState(submitFeedback, initialState);
 
-    // ✨ NEW: State for both the dialog AND the toast.
     const [isSuccessDialogOpen, setSuccessDialogOpen] = useState(false);
     const [toastInfo, setToastInfo] = useState({ show: false, message: '' });
 
     // State for controlled components
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
-    const [registrationRating, setRegistrationRating] = useState('');
+
+    // ✨ NEW States for updated questions
+    const [overallExperienceRating, setOverallExperienceRating] = useState('');
     const [communicationRating, setCommunicationRating] = useState('');
-    const [venueRating, setVenueRating] = useState('');
-    const [pacingRating, setPacingRating] = useState('');
+    const [lunchRating, setLunchRating] = useState('');
+    const [platformUsefulnessRating, setPlatformUsefulnessRating] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -110,43 +110,59 @@ export default function FeedbackPage() {
         }
     }, [user]);
 
-    // ✨ CHANGED: This effect now triggers BOTH the dialog and the toast on success.
+    // ✨ FIXED: Improved success handling with proper cleanup
     useEffect(() => {
         if (state.isSuccess) {
-            // 1. Show the toast
             setToastInfo({ show: true, message: 'Feedback Submitted!' });
-
-            // 2. Show the dialog
             setSuccessDialogOpen(true);
 
-            // 3. Reset the form fields
-            formRef.current?.reset();
-            setFullName(user?.displayName || '');
-            setEmail(user?.email || '');
-            setRegistrationRating('');
+            // Reset all form states
+            setOverallExperienceRating('');
             setCommunicationRating('');
-            setVenueRating('');
-            setPacingRating('');
+            setLunchRating('');
+            setPlatformUsefulnessRating('');
 
-            // 4. Set a timer to hide the toast automatically
-            const timer = setTimeout(() => {
+            // Reset form after a brief delay to ensure the submission is complete
+            const resetTimer = setTimeout(() => {
+                formRef.current?.reset();
+                // Force re-render by changing the form key
+                setFormKey(prev => prev + 1);
+            }, 100);
+
+            const toastTimer = setTimeout(() => {
                 setToastInfo({ show: false, message: '' });
-            }, 3000); // Hide after 3 seconds
+            }, 3000);
 
-            // Cleanup the timer if the component unmounts
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(resetTimer);
+                clearTimeout(toastTimer);
+            };
         }
-    }, [state.isSuccess, user]);
+    }, [state.isSuccess]);
+
+    // ✨ FIXED: Reset form when success dialog is closed
+    const handleSuccessDialogClose = () => {
+        setSuccessDialogOpen(false);
+        // Ensure form is completely reset
+        setOverallExperienceRating('');
+        setCommunicationRating('');
+        setLunchRating('');
+        setPlatformUsefulnessRating('');
+        formRef.current?.reset();
+        setFormKey(prev => prev + 1);
+    };
 
     if (!eventId) {
         return <div className="flex h-full w-full items-center justify-center"><InitialLoader /></div>;
     }
 
+    const standardRatingOptions = ['Excellent', 'Good', 'Average', 'Poor'];
+    const platformRatingOptions = ['Very Useful', 'Useful', 'Neutral', 'Not Useful'];
+
     return (
         <div className="h-full w-full">
-            {/* ✨ NEW: Render both notification components */}
             <Toast show={toastInfo.show} message={toastInfo.message} />
-            <SuccessDialog isOpen={isSuccessDialogOpen} onClose={() => setSuccessDialogOpen(false)} />
+            <SuccessDialog isOpen={isSuccessDialogOpen} onClose={handleSuccessDialogClose} />
 
             <div className="mb-6">
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-zinc-100">Event Feedback</h1>
@@ -155,68 +171,134 @@ export default function FeedbackPage() {
                 </p>
             </div>
 
-            <form ref={formRef} action={formAction} className="space-y-6">
-                {/* Card 1: Attendee Information */}
+            {/* ✨ FIXED: Added key prop to force re-render */}
+            <form key={formKey} ref={formRef} action={formAction} className="space-y-6">
+                {/* Card 1: Your Information (Unchanged) */}
                 <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">1. Your Information</h2>
                     <div className="mt-4 space-y-4">
                         <div>
-                            <label htmlFor="fullName" className="mb-2 block text-sm font-medium">Full Name (Required)</label>
-                            <input id="fullName" name="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your Full Name" required className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"/>
+                            <label htmlFor="fullName" className="mb-2 block text-sm font-medium">Full Name</label>
+                            <input
+                                id="fullName"
+                                name="fullName"
+                                type="text"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="Your Full Name"
+                                required
+                                className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            />
                             {state.errors?.fullName && <p className="mt-1 text-sm text-red-500">{state.errors.fullName[0]}</p>}
                         </div>
                         <div>
-                            <label htmlFor="email" className="mb-2 block text-sm font-medium">Email Address (Required)</label>
-                            <input id="email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your.email@example.com" required className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"/>
+                            <label htmlFor="email" className="mb-2 block text-sm font-medium">Email Address</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="your.email@example.com"
+                                required
+                                className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            />
                             {state.errors?.email && <p className="mt-1 text-sm text-red-500">{state.errors.email[0]}</p>}
                         </div>
                         <div>
                             <label htmlFor="registrationId" className="mb-2 block text-sm font-medium">Registration number (Optional)</label>
-                            <input id="registrationId" name="registrationId" type="text" placeholder="Your ID from registration" className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"/>
+                            <input
+                                id="registrationId"
+                                name="registrationId"
+                                type="text"
+                                placeholder="Your ID from registration"
+                                className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            />
                         </div>
                     </div>
                 </div>
 
-                {/* Card 2: User Comments */}
+                {/* ✨ Card 2: Event Ratings & Suggestions */}
                 <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">2. Suggestions & Comments</h2>
-                    <div className="mt-4 space-y-2">
-                        <label htmlFor="comments" className="block text-sm font-medium text-gray-900 dark:text-zinc-200">How can we improve for next time? (Required)</label>
-                        <textarea id="comments" name="comments" rows={4} placeholder="Constructive feedback is always welcome!" required className="block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"></textarea>
-                        {state.errors?.comments && <p className="mt-1 text-sm text-red-500">{state.errors.comments[0]}</p>}
-                    </div>
-                </div>
-
-                {/* Card 3: Event Ratings */}
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">3. Event Ratings</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">2. Event Ratings & Suggestions</h2>
                     <div className="mt-4 space-y-6">
                         <div>
-                            <RatingScale label="How would you rate the registration process? (Required)" value={registrationRating} setValue={setRegistrationRating}/>
-                            {state.errors?.registrationRating && <p className="mt-2 text-sm text-red-500">{state.errors.registrationRating[0]}</p>}
+                            <RatingScale
+                                label="Overall, how would you rate your event experience?"
+                                value={overallExperienceRating}
+                                setValue={setOverallExperienceRating}
+                                options={standardRatingOptions}
+                            />
+                            {state.errors?.overallExperienceRating && <p className="mt-2 text-sm text-red-500">{state.errors.overallExperienceRating[0]}</p>}
                         </div>
                         <div>
-                            <RatingScale label="How clear was the pre-event communication? (Required)" value={communicationRating} setValue={setCommunicationRating}/>
+                            <RatingScale
+                                label="How clear was the pre-event communication?"
+                                value={communicationRating}
+                                setValue={setCommunicationRating}
+                                options={standardRatingOptions}
+                            />
                             {state.errors?.communicationRating && <p className="mt-2 text-sm text-red-500">{state.errors.communicationRating[0]}</p>}
                         </div>
                         <div>
-                            <RatingScale label="How would you rate the venue and seating? (Required)" value={venueRating} setValue={setVenueRating}/>
-                            {state.errors?.venueRating && <p className="mt-2 text-sm text-red-500">{state.errors.venueRating[0]}</p>}
+                            <RatingScale
+                                label="How would you rate the lunch provided?"
+                                value={lunchRating}
+                                setValue={setLunchRating}
+                                options={standardRatingOptions}
+                            />
+                            {state.errors?.lunchRating && <p className="mt-2 text-sm text-red-500">{state.errors.lunchRating[0]}</p>}
                         </div>
-                        <div>
-                            <RatingScale label="How would you rate the event's pacing? (Required)" value={pacingRating} setValue={setPacingRating}/>
-                            {state.errors?.pacingRating && <p className="mt-2 text-sm text-red-500">{state.errors.pacingRating[0]}</p>}
+                        <div className="pt-2">
+                            <label htmlFor="eventImprovementComments" className="block text-sm font-medium text-gray-900 dark:text-zinc-200">What did you feel was lacking or has room for improvement in the event?</label>
+                            <textarea
+                                id="eventImprovementComments"
+                                name="eventImprovementComments"
+                                rows={4}
+                                placeholder="Constructive feedback on sessions, venue, etc. is always welcome!"
+                                required
+                                className="mt-2 block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            />
+                            {state.errors?.eventImprovementComments && <p className="mt-1 text-sm text-red-500">{state.errors.eventImprovementComments[0]}</p>}
                         </div>
                     </div>
                 </div>
 
-                <input type="hidden" name="eventId" value={eventId} />
-                <input type="hidden" name="registrationRating" value={registrationRating} required />
-                <input type="hidden" name="communicationRating" value={communicationRating} required />
-                <input type="hidden" name="venueRating" value={venueRating} required />
-                <input type="hidden" name="pacingRating" value={pacingRating} required />
+                {/* ✨ Card 3: Platform Feedback */}
+                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">3. Platform Feedback</h2>
+                    <div className="mt-4 space-y-6">
+                        <div>
+                            <RatingScale
+                                label="How useful did you find the event platform for announcements and information?"
+                                value={platformUsefulnessRating}
+                                setValue={setPlatformUsefulnessRating}
+                                options={platformRatingOptions}
+                            />
+                            {state.errors?.platformUsefulnessRating && <p className="mt-2 text-sm text-red-500">{state.errors.platformUsefulnessRating[0]}</p>}
+                        </div>
+                        <div className="pt-2">
+                            <label htmlFor="platformImprovementComments" className="block text-sm font-medium text-gray-900 dark:text-zinc-200">How can we improve the platform? (e.g., bug reports, feature suggestions)</label>
+                            <textarea
+                                id="platformImprovementComments"
+                                name="platformImprovementComments"
+                                rows={4}
+                                placeholder="Your ideas help us build a better experience for future events."
+                                required
+                                className="mt-2 block w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:ring-rose-500 dark:border-zinc-700 dark:bg-zinc-800"
+                            />
+                            {state.errors?.platformImprovementComments && <p className="mt-1 text-sm text-red-500">{state.errors.platformImprovementComments[0]}</p>}
+                        </div>
+                    </div>
+                </div>
 
-                {/* Display server error message (e.g., database error) */}
+                {/* ✨ Updated Hidden Inputs */}
+                <input type="hidden" name="eventId" value={eventId} />
+                <input type="hidden" name="overallExperienceRating" value={overallExperienceRating} required />
+                <input type="hidden" name="communicationRating" value={communicationRating} required />
+                <input type="hidden" name="lunchRating" value={lunchRating} required />
+                <input type="hidden" name="platformUsefulnessRating" value={platformUsefulnessRating} required />
+
                 {state.message && !state.isSuccess && (
                     <div className="text-sm text-red-600">{state.message}</div>
                 )}

@@ -5,15 +5,16 @@ import { FeedbackResponse, FirestoreTimestamp } from '@/app/lib/definitions';
 import { ArrowDownTrayIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
-// A small component to display colored rating badges
+// ✨ UPDATED: RatingBadge now handles the new platform usefulness options
 function RatingBadge({ rating }: { rating?: string }) {
     if (!rating) return <span className="text-gray-400 dark:text-zinc-500">-</span>;
 
     const badgeColor = clsx({
-        'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': rating === 'Excellent',
-        'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': rating === 'Good',
-        'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300': rating === 'Average',
-        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300': rating === 'Poor',
+        // Standard and Platform Positive Ratings
+        'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': rating === 'Excellent' || rating === 'Very Useful',
+        'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': rating === 'Good' || rating === 'Useful',
+        'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300': rating === 'Average' || rating === 'Neutral',
+        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300': rating === 'Poor' || rating === 'Not Useful',
     });
 
     return (
@@ -31,7 +32,6 @@ function isFirestoreTimestamp(value: unknown): value is FirestoreTimestamp {
 // Helper to format the date
 function formatDate(timestamp: string | FirestoreTimestamp) {
     if (!timestamp) return 'N/A';
-
     let date: Date;
     if (isFirestoreTimestamp(timestamp)) {
         date = new Date(timestamp.seconds * 1000);
@@ -40,20 +40,12 @@ function formatDate(timestamp: string | FirestoreTimestamp) {
     } else {
         return 'N/A';
     }
-
-    return date.toLocaleString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    return date.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // Helper to convert timestamp to milliseconds for sorting
 function getTimestampMillis(timestamp: string | FirestoreTimestamp): number {
     if (!timestamp) return 0;
-
     if (isFirestoreTimestamp(timestamp)) {
         return timestamp.seconds * 1000;
     } else if (typeof timestamp === 'string') {
@@ -76,11 +68,9 @@ export default function FeedbackTab({ responses }: { responses: FeedbackResponse
             return sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate;
         }
 
-        // Handle undefined values
         if (aValue === undefined && bValue === undefined) return 0;
         if (aValue === undefined) return 1;
         if (bValue === undefined) return -1;
-
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -94,19 +84,21 @@ export default function FeedbackTab({ responses }: { responses: FeedbackResponse
         setSortConfig({ key, direction });
     };
 
+    // ✨ UPDATED: CSV export now includes all the new fields
     const handleExport = () => {
-        const headers = "Date,Name,Email,Registration ID,Registration,Communication,Venue,Pacing,Comments\n";
+        const headers = "Date,Name,Email,Registration ID,Overall Experience,Communication,Lunch,Platform Usefulness,Event Improvement Comments,Platform Improvement Comments\n";
         const csvContent = sortedResponses.map(r => {
             const row = [
                 `"${formatDate(r.submittedAt)}"`,
                 `"${r.fullName}"`,
                 `"${r.email}"`,
                 `"${r.registrationId || ''}"`,
-                r.registrationRating || '',
+                r.overallExperienceRating || '',
                 r.communicationRating || '',
-                r.venueRating || '',
-                r.pacingRating || '',
-                `"${(r.comments || '').replace(/"/g, '""')}"`
+                r.lunchRating || '',
+                r.platformUsefulnessRating || '',
+                `"${(r.eventImprovementComments || '').replace(/"/g, '""')}"`,
+                `"${(r.platformImprovementComments || '').replace(/"/g, '""')}"`
             ];
             return row.join(',');
         }).join('\n');
@@ -121,6 +113,18 @@ export default function FeedbackTab({ responses }: { responses: FeedbackResponse
         link.click();
         document.body.removeChild(link);
     };
+
+    // ✨ UPDATED: Table headers now reflect the new form structure
+    const tableHeaders: { key: keyof FeedbackResponse, label: string }[] = [
+        { key: 'submittedAt', label: 'Date' },
+        { key: 'fullName', label: 'Submitter' },
+        { key: 'overallExperienceRating', label: 'Overall Exp.' },
+        { key: 'communicationRating', label: 'Communication' },
+        { key: 'lunchRating', label: 'Lunch' },
+        { key: 'platformUsefulnessRating', label: 'Platform' },
+        { key: 'eventImprovementComments', label: 'Event Comments' },
+        { key: 'platformImprovementComments', label: 'Platform Comments' },
+    ];
 
     return (
         <div className="space-y-6">
@@ -145,39 +149,41 @@ export default function FeedbackTab({ responses }: { responses: FeedbackResponse
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
                     <thead className="bg-gray-50 dark:bg-zinc-900/50">
                     <tr>
-                        {/* Table Headers */}
-                        {['submittedAt', 'fullName', 'registrationRating', 'communicationRating', 'venueRating', 'pacingRating', 'comments'].map((key) => {
-                            const labels: { [key: string]: string } = { submittedAt: 'Date', fullName: 'Submitter', registrationRating: 'Registration', communicationRating: 'Communication', venueRating: 'Venue', pacingRating: 'Pacing', comments: 'Comments' };
-                            return (
-                                <th key={key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-zinc-400">
-                                    <button onClick={() => requestSort(key as keyof FeedbackResponse)} className="flex items-center gap-1 group">
-                                        {labels[key]}
-                                        {sortConfig?.key === key && (sortConfig.direction === 'asc' ? <ArrowUpIcon className="h-3 w-3" /> : <ArrowDownIcon className="h-3 w-3" />)}
-                                    </button>
-                                </th>
-                            );
-                        })}
+                        {tableHeaders.map((header) => (
+                            <th key={header.key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-zinc-400">
+                                <button onClick={() => requestSort(header.key)} className="flex items-center gap-1 group">
+                                    {header.label}
+                                    {sortConfig?.key === header.key && (sortConfig.direction === 'asc' ? <ArrowUpIcon className="h-3 w-3" /> : <ArrowDownIcon className="h-3 w-3" />)}
+                                </button>
+                            </th>
+                        ))}
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
                     {sortedResponses.length > 0 ? sortedResponses.map((response) => (
                         <tr key={response.id}>
+                            {/* ✨ UPDATED: Table cells now render the new data fields */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">{formatDate(response.submittedAt)}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="font-medium text-gray-900 dark:text-zinc-100">{response.fullName}</div>
                                 <div className="text-xs text-gray-500 dark:text-zinc-400">{response.email}</div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.registrationRating} /></td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.overallExperienceRating} /></td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.communicationRating} /></td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.venueRating} /></td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.pacingRating} /></td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.lunchRating} /></td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm"><RatingBadge rating={response.platformUsefulnessRating} /></td>
                             <td className="px-6 py-4 text-sm text-gray-600 dark:text-zinc-300 min-w-[20rem]">
-                                <p className="line-clamp-3">{response.comments || 'N/A'}</p>
+                                <p className="line-clamp-4">{response.eventImprovementComments || 'N/A'}</p>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-zinc-300 min-w-[20rem]">
+                                <p className="line-clamp-4">{response.platformImprovementComments || 'N/A'}</p>
                             </td>
                         </tr>
                     )) : (
                         <tr>
-                            <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-zinc-400">No feedback responses have been submitted yet.</td>
+                            <td colSpan={tableHeaders.length} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-zinc-400">
+                                No feedback responses have been submitted yet.
+                            </td>
                         </tr>
                     )}
                     </tbody>

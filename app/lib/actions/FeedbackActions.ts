@@ -6,43 +6,47 @@ import { adminDb } from '@/app/lib/firebase-server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 
-// --- Define the shape of the form data ---
+// ✨ UPDATED: Zod schema to match the new form structure
 const SubmitFeedbackSchema = z.object({
     eventId: z.string().min(1, 'Event ID is missing.'),
     fullName: z.string().min(2, 'Full name is required.'),
     email: z.string().email('Please enter a valid email address.'),
-    // ✨ CHANGED: Registration ID is now optional.
     registrationId: z.string().optional(),
-    comments: z.string().min(1, 'Comments and suggestions are required.'),
-    registrationRating: z.string().min(1, 'Please rate the registration process.'),
+
+    // New event ratings
+    overallExperienceRating: z.string().min(1, 'Please rate your overall experience.'),
     communicationRating: z.string().min(1, 'Please rate the pre-event communication.'),
-    venueRating: z.string().min(1, 'Please rate the venue and seating.'),
-    pacingRating: z.string().min(1, "Please rate the event's pacing."),
+    lunchRating: z.string().min(1, 'Please rate the lunch provided.'),
+
+    // New comment fields
+    eventImprovementComments: z.string().min(1, 'Please provide feedback for the event.'),
+
+    // Platform-specific fields
+    platformUsefulnessRating: z.string().min(1, 'Please rate the platform usefulness.'),
+    platformImprovementComments: z.string().min(1, 'Please provide feedback for the platform.'),
 });
 
-// --- Define the state for the useActionState hook ---
-// ✨ CHANGED: Removed registrationId from the possible errors.
+// ✨ UPDATED: State type to match the new schema for displaying errors
 export type SubmitFeedbackState = {
     message?: string | null;
     errors?: {
         fullName?: string[];
         email?: string[];
-        comments?: string[];
-        registrationRating?: string[];
+        overallExperienceRating?: string[];
         communicationRating?: string[];
-        venueRating?: string[];
-        pacingRating?: string[];
+        lunchRating?: string[];
+        eventImprovementComments?: string[];
+        platformUsefulnessRating?: string[];
+        platformImprovementComments?: string[];
     };
     isSuccess?: boolean;
 };
 
-// --- The Server Action (No logic changes needed here) ---
 export async function submitFeedback(
     prevState: SubmitFeedbackState,
     formData: FormData,
 ): Promise<SubmitFeedbackState> {
     const session = await adminAuth.getSession();
-
     const validatedFields = SubmitFeedbackSchema.safeParse(Object.fromEntries(formData));
 
     if (!validatedFields.success) {
@@ -76,23 +80,27 @@ export async function submitFeedback(
                 submittedAt: FieldValue.serverTimestamp(),
             });
 
+            // ✨ FIXED: Transaction payload - removed sanitization for consistent data structure
             const updatePayload: { [key: string]: FieldValue } = {
                 'feedbackSummary.totalResponses': FieldValue.increment(1),
             };
 
-            if (feedbackData.registrationRating) {
-                updatePayload[`feedbackSummary.registrationRating.${feedbackData.registrationRating}`] =
+            // All ratings use the same field structure without sanitization
+            if (feedbackData.overallExperienceRating) {
+                updatePayload[`feedbackSummary.overallExperienceRating.${feedbackData.overallExperienceRating}`] =
                     FieldValue.increment(1);
             }
             if (feedbackData.communicationRating) {
                 updatePayload[`feedbackSummary.communicationRating.${feedbackData.communicationRating}`] =
                     FieldValue.increment(1);
             }
-            if (feedbackData.venueRating) {
-                updatePayload[`feedbackSummary.venueRating.${feedbackData.venueRating}`] = FieldValue.increment(1);
+            if (feedbackData.lunchRating) {
+                updatePayload[`feedbackSummary.lunchRating.${feedbackData.lunchRating}`] = FieldValue.increment(1);
             }
-            if (feedbackData.pacingRating) {
-                updatePayload[`feedbackSummary.pacingRating.${feedbackData.pacingRating}`] = FieldValue.increment(1);
+            if (feedbackData.platformUsefulnessRating) {
+                // FIXED: Store platform ratings as-is without sanitization
+                updatePayload[`feedbackSummary.platformUsefulnessRating.${feedbackData.platformUsefulnessRating}`] =
+                    FieldValue.increment(1);
             }
 
             transaction.update(eventDocRef, updatePayload);
