@@ -12,7 +12,7 @@ export interface Location {
 }
 
 export const eventLocations: Location[] = [
-   // Registration & Robes Collection Venues [cite: 9, 10]
+    // Registration & Robes Collection Venues [cite: 9, 10]
     {
         id: 1,
         category: 'Registration confirmation & collecting Robes',
@@ -26,7 +26,7 @@ export const eventLocations: Location[] = [
         id: 2,
         category: 'Registration confirmation & collecting Robes',
         title: 'ONLINE Education: M.C.A., B.B.A., B.C.A., & Diploma',
-        details: 'Tech Park – I',
+        details: 'Tech Park 1',
         mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
         latitude: 12.8225,
         longitude: 80.0465,
@@ -35,35 +35,35 @@ export const eventLocations: Location[] = [
         id: 3,
         category: 'Registration confirmation & collecting Robes',
         title: 'Distance Education: B.Com., B.B.A., M.B.A., M.C.A., M.Com. & M.A',
-        details: 'Tech Park – I',
+        details: 'Tech Park 1 ',
         mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
         latitude: 12.8225,
         longitude: 80.0465,
     },
 
-   // Breakfast Venue [cite: 11, 12]
+    // Breakfast Venue [cite: 11, 12]
     {
         id: 4,
         category: 'Breakfast',
         title: 'Breakfast',
-        details: 'Tech Park – I Ground Floor Canteen',
+        details: 'Tech Park 1 Ground Floor Canteen',
         mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
         latitude: 12.8225,
         longitude: 80.0465,
     },
 
-   // Lunch Venue [cite: 11, 12]
+    // Lunch Venue [cite: 11, 12]
     {
         id: 5,
         category: 'Lunch',
         title: 'Lunch',
-        details: 'SANNASI HOSTEL',
+        details: 'Sannasi Hostel',
         mapUrl: 'https://maps.app.goo.gl/GAxoaVyLgXdR3VEc8',
         latitude: 12.8208,
         longitude: 80.0448,
     },
 
-   // Parking [cite: 12]
+    // Parking [cite: 12]
     {
         id: 6,
         category: 'Parking',
@@ -74,7 +74,7 @@ export const eventLocations: Location[] = [
         longitude: 80.0440,
     },
 
-  // Robe Return Points [cite: 11, 12]
+    // Robe Return Points [cite: 11, 12]
     {
         id: 7,
         category: 'Robe Return',
@@ -94,7 +94,7 @@ export const eventLocations: Location[] = [
         longitude: 80.0465,
     },
 
-   // Seating Plan (Main Venue) [cite: 6]
+    // Seating Plan (Main Venue) [cite: 6]
     {
         id: 9,
         category: 'Seating Plan',

@@ -1,13 +1,11 @@
 import { notFound } from 'next/navigation';
-import { fetchPublicEventByShortId, fetchAllAnnouncementsForEvent } from '@/app/lib/data';
+import { fetchPublicEventByShortId } from '@/app/lib/data';
 import { Toaster } from 'react-hot-toast';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Navbar from '@/app/e/ui/Navbar';
 import EventHeader from '@/app/e/ui/EventHeader';
 import TabNavigation from './TabNavigation';
 import { EventContextProvider } from './context';
-import { ScheduledScreen, PausedScreen, EndedScreen, CancelledScreen } from '@/app/e/ui/StatusScreens';
-import { Announcement } from '@/app/lib/definitions';
 import { AuthProvider } from "@/app/lib/firebase/auth";
 import NetworkStatusIndicator from '@/app/e/ui/NetworkStatusIndicator';
 
@@ -27,15 +25,10 @@ export default async function EventLayout({children, params}: {
 
     const {initialEvent, eventPath} = data;
 
-    let finalAnnouncements: Announcement[] = [];
-    if (initialEvent.status === 'ended') {
-        // You'll need to create this simple data fetcher in your `data.ts` file.
-        finalAnnouncements = await fetchAllAnnouncementsForEvent(eventPath);
-    }
-
     return (
         <AuthProvider>
-            <EventContextProvider value={{ eventPath }}>
+            {/* PASS THE FULL EVENT OBJECT HERE */}
+            <EventContextProvider value={{ eventPath, event: initialEvent }}>
                 <div className="bg-slate-50 text-slate-800 dark:bg-zinc-950 dark:text-slate-200">
                     <Toaster position="top-center" reverseOrder={false} />
 
@@ -47,22 +40,12 @@ export default async function EventLayout({children, params}: {
                         <EventHeader event={initialEvent} eventId={resolvedParams.id} />
 
                         <main className="mt-8">
-                            {/* --- THE FIX: Conditional logic based on event status --- */}
-                            {initialEvent.status === 'live' ? (
-                                <>
-                                    {/* If the event is live, show the tabs and the page content */}
-                                    <TabNavigation eventId={resolvedParams.id} />
-                                    <div className="py-6">{children}</div>
-                                </>
-                            ) : (
-                                <>
-                                    {/* Otherwise, show the appropriate status screen */}
-                                    {initialEvent.status === 'scheduled' && <ScheduledScreen event={initialEvent} />}
-                                    {initialEvent.status === 'paused' && <PausedScreen />}
-                                    {initialEvent.status === 'ended' && <EndedScreen announcements={finalAnnouncements} />}
-                                    {initialEvent.status === 'cancelled' && <CancelledScreen />}
-                                </>
-                            )}
+                            {/* CHANGE: Logic removed.
+                                We always show Tabs and Page Content.
+                                The specific pages now decide if they are 'blocked' or not.
+                            */}
+                            <TabNavigation eventId={resolvedParams.id} />
+                            <div className="py-6">{children}</div>
                         </main>
                     </div>
 

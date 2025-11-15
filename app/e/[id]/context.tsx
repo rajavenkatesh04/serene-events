@@ -1,16 +1,15 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
+import { Event } from '@/app/lib/definitions';
 
-// Define the shape of the data we want to share
 type EventContextType = {
     eventPath: string;
+    event: Event;
 };
 
-// Create the context with a default value
 const EventContext = createContext<EventContextType | null>(null);
 
-// Create a provider component with proper typing
 export function EventContextProvider({
                                          children,
                                          value
@@ -25,7 +24,6 @@ export function EventContextProvider({
     );
 }
 
-// Create a custom hook to easily access the context
 export function useEventContext() {
     const context = useContext(EventContext);
     if (!context) {
