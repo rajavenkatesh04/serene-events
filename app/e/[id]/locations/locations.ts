@@ -2,7 +2,8 @@
 
 export interface Location {
     id: number;
-    category: 'Registration confirmation & collecting Robes' | 'Seating Plan' | 'Lunch' | 'Parking' | 'Parents Accommodation' | 'Robe Return';
+    // Categories strictly restricted to those found in the document [cite: 8, 11]
+    category: 'Registration confirmation & collecting Robes' | 'Seating Plan' | 'Lunch' | 'Parking' | 'Robe Return' | 'Breakfast';
     title: string;
     details: string;
     mapUrl: string;
@@ -11,21 +12,21 @@ export interface Location {
 }
 
 export const eventLocations: Location[] = [
-    // Registration & Robes Collection Venues
+   // Registration & Robes Collection Venues [cite: 9, 10]
     {
         id: 1,
         category: 'Registration confirmation & collecting Robes',
-        title: 'Ph.D. (All Programmes), First Rank Holders (All Programmes), SRM College of Pharmacy, SRM College of Physiotherapy, Faculty of Engineering & Technology, ',
-        details: 'School of Bio-Engineering',
-        mapUrl: 'https://goo.gl/maps/kuDng8D1P8cL1sjR8',
-        latitude: 12.8242,
-        longitude: 80.0435,
+        title: 'ONLINE Education: MBA',
+        details: 'University Building (Ground Floor)',
+        mapUrl: 'https://goo.gl/maps/UiT6NSdVieygaavP7',
+        latitude: 12.8231,
+        longitude: 80.0458,
     },
     {
         id: 2,
         category: 'Registration confirmation & collecting Robes',
-        title: 'SRM Medical College Hospital and Research Centre, SRM Kattankulathur Dental College, SRM School of Public Health, SRM College of Nursing, SRM College of Occupational Therapy',
-        details: 'Tech Park I',
+        title: 'ONLINE Education: M.C.A., B.B.A., B.C.A., & Diploma',
+        details: 'Tech Park – I',
         mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
         latitude: 12.8225,
         longitude: 80.0465,
@@ -33,72 +34,38 @@ export const eventLocations: Location[] = [
     {
         id: 3,
         category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Management - All PG Programmes (Kattankulathur & Vadapalani), Science & Humanities - All PG Programmes (Kattankulathur & Vadapalani)',
-        details: 'Medical College (Ground Floor)',
-        mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
-        latitude: 12.8255,
-        longitude: 80.0401,
-    },
-    {
-        id: 4,
-        category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Law',
-        details: 'Valliammai Polytechnic College (Block I)',
-        mapUrl: 'https://maps.app.goo.gl/bCe2gvVn56wmDifu7',
-        latitude: 12.8220,
-        longitude: 80.0425,
-    },
-    {
-        id: 5,
-        category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Agricultural Sciences, SRM Hotel Management (Kattankulathur & Vadapalani)',
-        details: 'Architecture Block (Ground Floor)',
-        mapUrl: 'https://goo.gl/maps/WLF98VPYvgCK6Jh58',
-        latitude: 12.8238,
-        longitude: 80.0442,
-    },
-    {
-        id: 6,
-        category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Management - UG All Programmes (Kattankulathur & Vadapalani)',
-        details: 'University Building (Second Floor)',
-        mapUrl: 'https://maps.app.goo.gl/PHaupMcfCZqRMSSY6',
-        latitude: 12.8231,
-        longitude: 80.0459,
-    },
-    {
-        id: 7,
-        category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Science & Humanities - UG All Programmes (Kattankulathur)',
-        details: 'University Building (Ground Floor)',
-        mapUrl: 'https://goo.gl/maps/UiT6NSdVieygaavP7',
-        latitude: 12.8231,
-        longitude: 80.0458,
-    },
-    {
-        id: 8,
-        category: 'Registration confirmation & collecting Robes',
-        title: 'Faculty of Science and Humanities - UG All Programmes (Vadapalani)',
-        details: 'Basic Engineering Lab (BEL)',
-        mapUrl: 'https://maps.app.goo.gl/TFfgTZy5FxdXb5297',
-        latitude: 12.8245,
-        longitude: 80.0470,
+        title: 'Distance Education: B.Com., B.B.A., M.B.A., M.C.A., M.Com. & M.A',
+        details: 'Tech Park – I',
+        mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
+        latitude: 12.8225,
+        longitude: 80.0465,
     },
 
-    // Lunch Venue
+   // Breakfast Venue [cite: 11, 12]
     {
-        id: 9,
+        id: 4,
+        category: 'Breakfast',
+        title: 'Breakfast',
+        details: 'Tech Park – I Ground Floor Canteen',
+        mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
+        latitude: 12.8225,
+        longitude: 80.0465,
+    },
+
+   // Lunch Venue [cite: 11, 12]
+    {
+        id: 5,
         category: 'Lunch',
-        title: 'Lunch for Graduands & Parents',
-        details: 'Sannasi Hostel - Available from 11:00 AM to 1:30 PM',
+        title: 'Lunch',
+        details: 'SANNASI HOSTEL',
         mapUrl: 'https://maps.app.goo.gl/GAxoaVyLgXdR3VEc8',
         latitude: 12.8208,
         longitude: 80.0448,
     },
 
-    // Parking
+   // Parking [cite: 12]
     {
-        id: 10,
+        id: 6,
         category: 'Parking',
         title: 'Car Parking',
         details: 'Play Ground (In front of Dr. T.P Ganesan Auditorium)',
@@ -107,82 +74,35 @@ export const eventLocations: Location[] = [
         longitude: 80.0440,
     },
 
-    // Parents Accommodation
+  // Robe Return Points [cite: 11, 12]
     {
-        id: 11,
-        category: 'Parents Accommodation',
-        title: 'Tech Park I',
-        details: 'Tech Park I with Live Stream arrangements',
-        mapUrl: 'https://goo.gl/maps/bj7PxxYXCcmRNvaU7',
+        id: 7,
+        category: 'Robe Return',
+        title: 'University Building (Ground Floor)',
+        details: 'Retuning of Convocation Robes',
+        mapUrl: 'https://goo.gl/maps/UiT6NSdVieygaavP7',
+        latitude: 12.8231,
+        longitude: 80.0458,
+    },
+    {
+        id: 8,
+        category: 'Robe Return',
+        title: 'Tech Park – I',
+        details: 'Retuning of Convocation Robes',
+        mapUrl: 'https://goo.gl/maps/GwtWeGXS8LR4oBTP6',
         latitude: 12.8225,
         longitude: 80.0465,
     },
-    {
-        id: 12,
-        category: 'Parents Accommodation',
-        title: 'Tech Park II',
-        details: 'Tech Park II - 1st Floor to 10th Floor (except 4th Floor) with Live Stream',
-        mapUrl: 'https://maps.app.goo.gl/FjuPtqVBJNKHeGQQ9',
-        latitude: 12.8228,
-        longitude: 80.0468,
-    },
-    {
-        id: 13,
-        category: 'Parents Accommodation',
-        title: 'SRM Medical College',
-        details: 'Medical College Old Examinations Hall (II Floor) and New Examinations Hall (II Floor) with Live Stream',
-        mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
-        latitude: 12.8255,
-        longitude: 80.0401,
-    },
-    {
-        id: 14,
-        category: 'Parents Accommodation',
-        title: 'Faculty of Management',
-        details: 'SRM College of Management with Live Stream',
-        mapUrl: 'https://goo.gl/maps/Fm4gSV9UNXPJVsMi6',
-        latitude: 12.8240,
-        longitude: 80.0455,
-    },
 
-    // Robe Return Points
+   // Seating Plan (Main Venue) [cite: 6]
     {
-        id: 15,
-        category: 'Robe Return',
-        title: 'Bio-Engineering Block',
-        details: 'Robe return point',
-        mapUrl: 'https://goo.gl/maps/kuDng8D1P8cL1sjR8',
-        latitude: 12.8242,
-        longitude: 80.0435,
-    },
-    {
-        id: 16,
-        category: 'Robe Return',
-        title: 'SRM Medical College',
-        details: 'Robe return point',
-        mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
-        latitude: 12.8255,
-        longitude: 80.0401,
-    },
-
-    //Seating plan venues
-    {
-        id: 16,
+        id: 9,
         category: 'Seating Plan',
-        title: 'Dr. T.P Ganesan Auditorium',
-        details: '& Mini hall 1 , 2',
+        title: 'Dr. T. P. Ganesan AUDITORIUM',
+        details: 'Main Venue',
         mapUrl: 'https://maps.app.goo.gl/PjUThgaPY7DY3NcG9',
         latitude: 12.824976330413575,
         longitude: 80.04667526762744,
-    },
-    {
-        id: 16,
-        category: 'Seating Plan',
-        title: 'SRM Medical College',
-        details: '& Lecture halls - 1,2,3,4',
-        mapUrl: 'https://goo.gl/maps/aHeUBdon2nZiuSZK9',
-        latitude: 12.8255,
-        longitude: 80.0401,
     },
 ];
 
@@ -196,12 +116,12 @@ export const getLocationById = (id: number): Location | undefined => {
     return eventLocations.find(location => location.id === id);
 };
 
-// All categories for filtering
+// All categories for filtering (Strictly limited to doc contents)
 export const locationCategories: Location['category'][] = [
     'Registration confirmation & collecting Robes',
     'Seating Plan',
+    'Breakfast',
     'Lunch',
     'Parking',
-    'Parents Accommodation',
     'Robe Return'
 ];
